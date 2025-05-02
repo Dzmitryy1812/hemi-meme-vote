@@ -1,103 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HEMIMEME - Meme Gallery</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .meme-card {
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .meme-card:hover {
-      transform: translateY(-5px);
-    }
-    #uploadModal {
-      transition: opacity 0.3s ease;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    .meme-image {
-      width: 100%;
-      height: auto;
-      object-fit: contain; /* Изображения не будут обрезаться */
+    .meme-card {
+      animation: fadeIn 0.6s ease-out;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background-image: linear-gradient(to bottom right, #fff8f0, #fff0e1);
+    }
+
+    .meme-card:hover {
+      transform: translateY(-5px) rotate(1deg);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    }
+
+    .gradient-header {
+      background: linear-gradient(135deg, #ff6b35 0%, #ff5500 100%);
+    }
+
+    .smooth-transition {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal-enter {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    .modal-enter-active {
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 200ms, transform 200ms;
     }
   </style>
 </head>
-<body class="bg-orange-50 text-orange-900 font-sans min-h-screen">
-
+<body class="bg-gradient-to-br from-orange-50 to-orange-100 min-h-screen">
   <!-- Header -->
-  <header class="bg-orange-600 text-white px-4 py-4 flex justify-between items-center shadow sticky top-0 z-10">
-    <div class="flex items-center gap-2">
-      <img src="https://i.imgur.com/SyOVYBY.jpeg" alt="HEMIMEME Logo" class="h-8 w-auto rounded-full">
-      <h1 class="text-xl font-bold hidden sm:block">
-        <i class="fas fa-images"></i> HEMIMEME
+  <header class="gradient-header text-white px-6 py-4 flex justify-between items-center shadow-xl sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <img src="https://i.imgur.com/SyOVYBY.jpeg" alt="Logo" class="h-10 w-10 rounded-full ring-2 ring-white">
+      <h1 class="text-2xl font-bold font-mono">
+        <i class="fas fa-fire mr-2"></i>HEMIMEME
       </h1>
     </div>
-    <div class="flex items-center gap-2">
-      <button id="connectButton" class="bg-white text-orange-600 px-4 py-2 rounded shadow hover:bg-orange-100 transition flex items-center">
-        <i class="fas fa-wallet mr-2"></i>
-        <span class="hidden sm:inline">Connect Wallet</span>
+    <div class="flex items-center gap-4">
+      <button id="connectButton" class="bg-white/90 text-orange-600 px-6 py-3 rounded-full shadow-md hover:bg-white hover:scale-105 smooth-transition">
+        <i class="fas fa-plug mr-2"></i>
+        <span class="hidden sm:inline">Connect</span>
       </button>
-      <button id="uploadButton" class="bg-orange-500 text-white px-4 py-2 rounded shadow hover:bg-orange-600 transition flex items-center">
-        <i class="fas fa-upload mr-2"></i>
-        <span class="hidden sm:inline">Upload Meme</span>
+      <button id="uploadButton" class="bg-orange-500/90 text-white px-6 py-3 rounded-full shadow-md hover:bg-orange-600 hover:scale-105 smooth-transition">
+        <i class="fas fa-cloud-upload-alt mr-2"></i>
+        <span class="hidden sm:inline">Upload</span>
       </button>
     </div>
   </header>
 
-  <!-- Main -->
-  <main class="max-w-5xl mx-auto py-8 px-4">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-orange-800">Latest Memes</h2>
-      <div id="stats" class="text-sm text-orange-600">
-        <span id="memeCount">0</span> memes • <span id="totalVotes">0</span> votes
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12">
+      <h2 class="text-4xl font-bold text-orange-900 mb-4 sm:mb-0">
+        <i class="fas fa-rocket mr-3"></i>Trending Memes
+      </h2>
+      <div class="bg-white/80 px-4 py-2 rounded-full shadow-sm">
+        <span class="text-orange-600 font-medium">
+          <i class="fas fa-chart-line mr-2"></i>
+          <span id="memeCount">420</span> memes • 
+          <span id="totalVotes">69K</span> votes
+        </span>
       </div>
     </div>
 
-    <div id="memeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div class="text-center py-10">
-        <i class="fas fa-spinner fa-spin text-3xl text-orange-400 mb-2"></i>
-        <p>Loading memes...</p>
+    <!-- Meme Grid -->
+    <div id="memeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <!-- Example Meme Card -->
+      <div class="meme-card group relative rounded-2xl p-6 shadow-lg border-2 border-orange-100">
+        <div class="relative overflow-hidden rounded-xl">
+          <img src="https://dzmitryy1812.github.io/public/memes/1.jpg" 
+               class="w-full h-64 object-cover transform group-hover:scale-105 smooth-transition"
+               alt="Funny Meme">
+          <div class="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-sm shadow">
+            #1
+          </div>
+        </div>
+        <div class="pt-4">
+          <h3 class="text-xl font-bold text-orange-900 truncate">Dank Meme Title</h3>
+          <div class="flex items-center justify-between mt-4">
+            <div class="flex items-center">
+              <i class="fas fa-user-astronaut text-orange-500 mr-2"></i>
+              <span class="text-orange-600">@meme_lord</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button class="bg-orange-500/20 text-orange-600 px-3 py-1 rounded-full hover:bg-orange-500/30 smooth-transition">
+                <i class="fas fa-heart mr-1"></i> 1.2K
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+      <!-- Repeat similar cards -->
     </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-orange-600 text-white py-4 mt-8">
-    <div class="container mx-auto px-4 text-center text-sm">
-      <p>HEMIMEME © 2025 • All memes belong to their respective authors</p>
-    </div>
-  </footer>
-
   <!-- Upload Modal -->
-  <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-20">
-    <div class="bg-white rounded-lg p-6 w-full max-w-md">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold text-orange-800">Upload New Meme</h3>
-        <button id="closeModal" class="text-orange-600 hover:text-orange-800">
-          <i class="fas fa-times"></i>
+  <div id="uploadModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl transform transition-all">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-orange-900">
+          <i class="fas fa-upload mr-2"></i>New Meme
+        </h3>
+        <button id="closeModal" class="text-orange-500 hover:text-orange-700 smooth-transition">
+          <i class="fas fa-times text-xl"></i>
         </button>
       </div>
+      
+      <form class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-orange-700 mb-2">Meme Title</label>
+          <input type="text" class="w-full px-4 py-3 rounded-xl border border-orange-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-orange-700 mb-2">Image URL</label>
+          <div class="flex gap-2">
+            <input type="url" class="w-full px-4 py-3 rounded-xl border border-orange-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent" 
+                   placeholder="https://example.com/meme.jpg">
+            <button class="px-4 bg-orange-100 text-orange-600 rounded-xl hover:bg-orange-200 smooth-transition">
+              <i class="fas fa-image"></i>
+            </button>
+          </div>
+        </div>
 
-      <form id="memeForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-orange-700">Meme Title</label>
-          <input type="text" id="memeTitle" required class="mt-1 block w-full rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-orange-700">Image URL</label>
-          <input type="url" id="memeUrl" required class="mt-1 block w-full rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500" placeholder="https://i.imgur.com/example.jpg">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-orange-700">Your Discord</label>
-          <input type="text" id="discordNick" class="mt-1 block w-full rounded-md border-orange-300 shadow-sm focus:border-orange-500 focus:ring-orange-500" placeholder="username#1234 (optional)">
-        </div>
-        <div class="flex justify-end space-x-3 pt-2">
-          <button type="button" id="cancelUpload" class="px-4 py-2 text-sm text-orange-600 hover:text-orange-800">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition">
-            <i class="fas fa-upload mr-1"></i> Upload
+        <div class="flex justify-end space-x-4 pt-4">
+          <button type="button" class="px-6 py-2 text-orange-600 hover:text-orange-800 smooth-transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-6 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 smooth-transition">
+            Upload Now
           </button>
         </div>
       </form>
@@ -105,50 +152,36 @@
   </div>
 
   <script>
-    let memes = [
-      { id: 1, title: "Meme 1", imageUrl: "https://dzmitryy1812.github.io/public/memes/1.jpg", votes: 42, author: "memelord#1337" },
-      { id: 2, title: "Meme 2", imageUrl: "https://dzmitryy1812.github.io/public/memes/2.jpg", votes: 35, author: "discord_user#4242" },
-      { id: 3, title: "Meme 3", imageUrl: "https://dzmitryy1812.github.io/public/memes/3.jpg", votes: 28, author: null },
-      { id: 4, title: "Meme 4", imageUrl: "https://dzmitryy1812.github.io/public/memes/4.jpg", votes: 25, author: "user#1234" },
-      { id: 5, title: "Meme 5", imageUrl: "https://dzmitryy1812.github.io/public/memes/5.jpg", votes: 15, author: "user2#2345" },
-      { id: 6, title: "Meme 6", imageUrl: "https://dzmitryy1812.github.io/public/memes/6.jpg", votes: 10, author: "user3#3456" }
-    ];
+    // Анимация модального окна
+    const modal = document.getElementById('uploadModal');
+    const openModal = () => {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
 
-    const memeGrid = document.getElementById("memeGrid");
+    const closeModal = () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
 
-    function renderMemes() {
-      if (memes.length === 0) {
-        memeGrid.innerHTML = '<div class="col-span-full text-center py-10 text-orange-600"><i class="fas fa-meh"></i> No memes available</div>';
-        return;
-      }
-      memeGrid.innerHTML = '';
-      memes.forEach(meme => {
-        const div = document.createElement("div");
-        div.className = "bg-white rounded-lg shadow-md overflow-hidden meme-card hover:shadow-lg";
-        div.innerHTML = `
-          <div class="relative">
-            <img src="${meme.imageUrl}" alt="${meme.title}" class="meme-image" onerror="this.src='https://via.placeholder.com/400x300?text=Image+Error'">
-            <div class="absolute top-2 right-2 bg-orange-600 text-white text-xs px-2 py-1 rounded-full">
-              #${meme.id}
-            </div>
-          </div>
-          <div class="p-4">
-            <h3 class="text-sm font-semibold truncate" title="${meme.title}">${meme.title}</h3>
-            <p class="text-xs text-orange-500 mt-1 truncate" title="${meme.author || 'Anonymous'}">
-              <i class="fab fa-discord mr-1"></i> ${meme.author || 'Anonymous'}
-            </p>
-            <div class="flex justify-between items-center mt-2">
-              <span class="text-xs text-orange-600 font-medium">
-                <i class="fas fa-heart mr-1"></i> ${meme.votes}
-              </span>
-            </div>
-          </div>
-        `;
-        memeGrid.appendChild(div);
+    document.getElementById('uploadButton').addEventListener('click', openModal);
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+
+    // Плавное появление карточек
+    const memeCards = document.querySelectorAll('.meme-card');
+    memeCards.forEach((card, index) => {
+      card.style.animationDelay = `${index * 0.1}s`;
+    });
+
+    // Ховер-эффекты
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('mouseenter', () => {
+        button.classList.add('transform', 'scale-105');
       });
-    }
-
-    renderMemes();
+      button.addEventListener('mouseleave', () => {
+        button.classList.remove('transform', 'scale-105');
+      });
+    });
   </script>
 </body>
 </html>
