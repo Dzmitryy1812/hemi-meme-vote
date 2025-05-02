@@ -104,9 +104,12 @@
     let isConnected = false;
 
     const fallbackMemes = [
-      { id: 1, title: "Distracted Boyfriend", imageUrl: "https://i.imgflip.com/1bij.jpg", votes: 42, author: "memelord#1337" },
-      { id: 2, title: "Change My Mind", imageUrl: "https://i.imgflip.com/9vct.jpg", votes: 35, author: "discord_user#4242" },
-      { id: 3, title: "Drake Hotline Bling", imageUrl: "https://i.imgflip.com/30b1gx.jpg", votes: 28, author: null }
+      { id: 1, title: "Distracted Boyfriend", imageUrl: "/public/1.jpg", votes: 42, author: "memelord#1337" },
+      { id: 2, title: "Change My Mind", imageUrl: "/public/2.jpg", votes: 35, author: "discord_user#4242" },
+      { id: 3, title: "Drake Hotline Bling", imageUrl: "/public/3.jpg", votes: 28, author: null },
+      { id: 4, title: "Meme 4", imageUrl: "/public/4.jpg", votes: 12, author: "user1#101" },
+      { id: 5, title: "Meme 5", imageUrl: "/public/5.jpg", votes: 18, author: "user2#202" },
+      { id: 6, title: "Meme 6", imageUrl: "/public/6.jpg", votes: 5, author: null }
     ];
 
     async function loadMemes() {
@@ -204,43 +207,34 @@
         return;
       }
       try {
-        const meme = memes.find(m => m.id === memeId);
-        if (meme) {
-          const btn = document.querySelector(`button[onclick="voteMeme(${memeId})"]`);
-          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-          btn.disabled = true;
-          await new Promise(resolve => setTimeout(resolve, 800));
-          meme.votes += 1;
-          updateStats();
-          renderMemes();
-        }
+        const response = await fetch(`http://localhost:3000/vote/${memeId}`, {
+          method: 'POST'
+        });
+        if (!response.ok) throw new Error('Vote error');
+        memes = memes.map(meme => (meme.id === memeId ? { ...meme, votes: meme.votes + 1 } : meme));
+        updateStats();
+        renderMemes();
       } catch (error) {
-        alert("Vote failed");
+        console.error("Vote error:", error);
       }
     }
 
     document.getElementById("connectButton").addEventListener("click", connectWallet);
-    document.getElementById("uploadButton").addEventListener("click", () => {
-      document.getElementById("uploadModal").classList.remove("hidden");
-    });
-    document.getElementById("cancelUpload").addEventListener("click", () => {
-      document.getElementById("uploadModal").classList.add("hidden");
-    });
-    document.getElementById("closeModal").addEventListener("click", () => {
-      document.getElementById("uploadModal").classList.add("hidden");
-    });
+    document.getElementById("uploadButton").addEventListener("click", () => document.getElementById("uploadModal").classList.remove("hidden"));
+    document.getElementById("closeModal").addEventListener("click", () => document.getElementById("uploadModal").classList.add("hidden"));
+    document.getElementById("cancelUpload").addEventListener("click", () => document.getElementById("uploadModal").classList.add("hidden"));
 
-    document.getElementById("memeForm").addEventListener("submit", async (e) => {
+    document.getElementById("memeForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const title = document.getElementById("memeTitle").value;
       const url = document.getElementById("memeUrl").value;
-      const author = document.getElementById("discordNick").value;
-      const newMeme = { title, url, votes: 0, author };
-      memes.unshift({ id: memes.length + 1, ...newMeme });
+      const discordNick = document.getElementById("discordNick").value;
+      const newMeme = { title, url, votes: 0, author: discordNick };
+      memes.push(newMeme);
       updateStats();
       renderMemes();
-      document.getElementById("uploadModal").classList.add("hidden");
       document.getElementById("memeForm").reset();
+      document.getElementById("uploadModal").classList.add("hidden");
     });
 
     loadMemes();
