@@ -87,6 +87,11 @@
     </div>
   </div>
 
+  <script type="module">
+    import { connectWallet } from './connectButton.js';
+    document.getElementById('connectButton').addEventListener('click', connectWallet);
+  </script>
+
   <script>
     const memes = [
       {id: 1, title: 'Doge Classic', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
@@ -99,7 +104,7 @@
 
     function renderMemes() {
       const grid = document.getElementById('memeGrid');
-      grid.innerHTML = memes.map(meme => `
+      grid.innerHTML = memes.map(meme => ` 
         <div class="meme-container mb-8" data-id="${meme.id}">
           <div class="p-4">
             <img src="${meme.url}" class="meme-image mx-auto" alt="${meme.title}" onerror="this.src='https://via.placeholder.com/800x600?text=Image+Error'">
@@ -127,21 +132,6 @@
         voteCount.textContent = parseInt(voteCount.textContent) + 1;
         e.target.classList.add('bg-orange-700');
         setTimeout(() => e.target.classList.remove('bg-orange-700'), 200);
-      }
-    });
-
-    document.getElementById('connectButton').addEventListener('click', async () => {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-          const btn = document.getElementById('connectButton');
-          btn.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${accounts[0].slice(0,6)}...${accounts[0].slice(-4)}`;
-          btn.classList.add('bg-green-100', 'text-green-700', 'hover:scale-100');
-        } catch (err) {
-          alert('Wallet connection error: ' + err.message);
-        }
-      } else {
-        alert('MetaMask not found. Please install MetaMask!');
       }
     });
 
