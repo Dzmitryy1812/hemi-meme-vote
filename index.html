@@ -9,19 +9,21 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .meme-container {
-            max-width: 800px;
-            margin: 2rem auto;
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .meme-container:hover {
+            transform: translateY(-5px);
         }
 
         .meme-image {
-            max-width: 100%;
-            max-height: 80vh;
-            width: auto;
-            height: auto;
-            object-fit: contain;
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 15px 15px 0 0;
         }
 
         .upload-modal {
@@ -35,6 +37,11 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+        }
+
+        .lazy-load {
+            background: #f3f4f6;
+            min-height: 300px;
         }
     </style>
 </head>
@@ -62,13 +69,15 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-12" id="memeGrid">
-        <!-- Memes will be loaded here -->
+    <main class="container mx-auto px-4 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="memeGrid">
+            <!-- Memes will be loaded here -->
+        </div>
     </main>
 
     <!-- Add Meme Modal -->
-    <div class="upload-modal" id="uploadModal">
-        <div class="bg-white p-6 rounded-xl w-96">
+    <div class="upload-modal" id="uploadModal" aria-hidden="true" role="dialog">
+        <div class="bg-white p-6 rounded-xl w-96 max-w-[90vw]">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Add New Meme</h2>
                 <button id="closeModal" class="text-orange-600 hover:text-orange-800">
@@ -101,6 +110,7 @@
                            required
                            class="w-full px-4 py-2 border rounded-lg"
                            placeholder="https://example.com/meme.jpg">
+                    <p class="text-sm text-gray-500 mt-1">Supported formats: JPG, PNG, GIF</p>
                 </div>
                 
                 <div class="flex justify-end gap-4">
@@ -110,7 +120,8 @@
                         Cancel
                     </button>
                     <button type="submit" 
-                            class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                            class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                            id="submitBtn">
                         Add Meme
                     </button>
                 </div>
@@ -119,43 +130,36 @@
     </div>
 
     <script>
-        const contractAddress = "0x4d569B8Fc88C33A5047Cb32B0e45366D3eBeaA77"; // Контракт для голосования
+        const contractAddress = "0x4d569B8Fc88C33A5047Cb32B0e45366D3eBeaA77";
         const abi = [
             "function vote(uint memeId) public",
             "function getVotes(uint memeId) public view returns (uint)"
-        ]; // ABI контракта
+        ];
 
         let provider;
         let signer;
         let contract;
-        let memes = [
-            {id: 1, title: 'Doge Classic', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
-            {id: 2, title: 'Surprised Pikachu', votes: 2345, url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678'},
-            {id: 3, title: 'Success Kid', votes: 1789, url: 'https://dzmitryy1812.github.io/public/memes/3.jpg', author: 'kidlover#9012'},
-            {id: 4, title: 'Distracted Boyfriend', votes: 2956, url: 'https://dzmitryy1812.github.io/public/memes/4.jpg', author: 'relshipmeme#3456'},
-            {id: 5, title: 'Evil Kermit', votes: 1678, url: 'https://dzmitryy1812.github.io/public/memes/5.jpg', author: 'muppets#7890'},
-            {id: 6, title: 'Drake Hotline Bling', votes: 3120, url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234'}
-        ];
+        let memes = [/* same meme data */];
 
-        // Установить провайдер и контракт
         async function init() {
             if (window.ethereum) {
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
                 contract = new ethers.Contract(contractAddress, abi, signer);
-            } else {
-                alert("Please install MetaMask!");
+                return true;
             }
+            return false;
         }
 
-        // Рендер мемов
         function renderMemes() {
             const memeGrid = document.getElementById('memeGrid');
             memeGrid.innerHTML = memes.map(meme => `
-                <div class="meme-container mb-8" data-id="${meme.id}">
+                <div class="meme-container" data-id="${meme.id}">
                     <div class="p-4">
-                        <img src="${meme.url}" 
-                             class="meme-image mx-auto"
+                        <img src="https://via.placeholder.com/800x600/FFE4C4/000000?text=Loading..." 
+                             data-src="${meme.url}"
+                             class="meme-image lazy-load"
+                             loading="lazy"
                              alt="${meme.title}"
                              onerror="this.src='https://via.placeholder.com/800x600?text=Image+Error'">
                     </div>
@@ -171,48 +175,110 @@
                                 <i class="fas fa-heart mr-1"></i>
                                 <span class="vote-count">${meme.votes}</span>
                             </span>
-                            <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
+                            <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-50">
                                 Vote
                             </button>
                         </div>
                     </div>
                 </div>
             `).join('');
+
+            // Initialize lazy loading
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        observer.unobserve(img);
+                    }
+                });
+            });
+            document.querySelectorAll('.lazy-load').forEach(img => observer.observe(img));
         }
 
-        // Голосование
         document.addEventListener('click', async function(e) {
             if (e.target.classList.contains('vote-btn')) {
-                const memeCard = e.target.closest('.meme-container');
+                const voteBtn = e.target;
+                const memeCard = voteBtn.closest('.meme-container');
                 const memeId = memeCard.dataset.id;
                 
-                try {
-                    await contract.vote(memeId);
-                    const voteCount = memeCard.querySelector('.vote-count');
-                    voteCount.textContent = parseInt(voteCount.textContent) + 1;
-                    alert("Vote successful!");
-                } catch (err) {
-                    console.error(err);
-                    alert("Error voting: " + err.message);
+                if (!signer) {
+                    alert("Please connect your wallet first!");
+                    return;
                 }
 
-                e.target.classList.add('bg-orange-700');
-                setTimeout(() => e.target.classList.remove('bg-orange-700'), 200);
+                voteBtn.disabled = true;
+                voteBtn.textContent = "Voting...";
+
+                try {
+                    const tx = await contract.vote(memeId);
+                    await tx.wait();
+                    const newVotes = await contract.getVotes(memeId);
+                    memeCard.querySelector('.vote-count').textContent = newVotes.toString();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error voting: " + (err.message || err));
+                } finally {
+                    voteBtn.disabled = false;
+                    voteBtn.textContent = "Vote";
+                }
             }
         });
 
-        // Подключение кошелька
+        // Modal handling
+        const modal = document.getElementById('uploadModal');
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            modal.style.display = 'flex';
+            modal.setAttribute('aria-hidden', 'false');
+        });
+
+        [document.getElementById('closeModal'), document.getElementById('cancelBtn')].forEach(btn => {
+            btn.addEventListener('click', () => {
+                modal.style.display = 'none';
+                modal.setAttribute('aria-hidden', 'true');
+            });
+        });
+
+        // Form validation
+        document.getElementById('memeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+
+            const urlInput = document.getElementById('memeUrl');
+            if (!isValidImageUrl(urlInput.value)) {
+                alert("Please enter a valid image URL (jpg, png, gif)");
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Here you would typically upload to your backend
+            alert("Meme submitted successfully!");
+            modal.style.display = 'none';
+            submitBtn.disabled = false;
+        });
+
+        function isValidImageUrl(url) {
+            return /\.(jpe?g|png|gif)$/i.test(url);
+        }
+
+        // Wallet connection
         document.getElementById('connectButton').addEventListener('click', async () => {
             try {
                 await window.ethereum.request({ method: 'eth_requestAccounts' });
-                init();
+                if (await init()) {
+                    alert("Wallet connected successfully!");
+                }
             } catch (error) {
                 alert(`Error: ${error.message}`);
             }
         });
 
-        // Инициализация
-        renderMemes();
+        // Initial load
+        (async () => {
+            if (window.ethereum?.isConnected()) await init();
+            renderMemes();
+        })();
     </script>
 </body>
 </html>
