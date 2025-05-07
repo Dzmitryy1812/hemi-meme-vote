@@ -1,3 +1,4 @@
+//Рабочий 
 // connectButton.js
 export async function connectWallet() {
     if (typeof window.ethereum === 'undefined') {
