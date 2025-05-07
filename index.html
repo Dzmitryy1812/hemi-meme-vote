@@ -108,6 +108,7 @@
         ];
 
         let provider, signer, contract;
+        let isConnected = false;
 
         const memes = [
             {id: 1, title: 'Doge Classic', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
@@ -119,53 +120,80 @@
         ];
 
         async function init() {
-            if (window.ethereum) {
+            try {
+                if (!window.ethereum) {
+                    alert("Please install MetaMask!");
+                    return false;
+                }
+                
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
                 contract = new ethers.Contract(contractAddress, abi, signer);
+                
+                isConnected = true;
+                document.getElementById('connectButton').textContent = "Connected";
+                
                 return true;
-            } else {
-                alert("MetaMask is not installed");
+            } catch (error) {
+                console.error('Connection error:', error);
+                alert("Connection failed: " + error.message);
                 return false;
             }
         }
 
         function renderMemes() {
-            const memeGrid = document.getElementById('memeGrid');
-            memeGrid.innerHTML = memes.map(meme => `
-                <div class="meme-container" data-id="${meme.id}">
-                    <div class="p-4">
-                        <img src="https://via.placeholder.com/800x600/FFE4C4/000000?text=Loading..." 
-                             data-src="${meme.url}" 
-                             class="meme-image lazy-load"
-                             loading="lazy"
-                             alt="${meme.title}"
-                             onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=Image+Error'">
-                    </div>
-                    <div class="p-4 bg-white/95">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xl font-bold text-orange-900">${meme.title}</h3>
-                            <span class="text-sm text-orange-600"><i class="fas fa-user mr-1"></i>${meme.author}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-orange-600 font-medium"><i class="fas fa-heart mr-1"></i><span class="vote-count">${meme.votes}</span></span>
-                            <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-50">Vote</button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+            try {
+                const memeGrid = document.getElementById('memeGrid');
+                if (!memeGrid) throw new Error('Meme grid container not found');
 
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.src = img.dataset.src;
-                        observer.unobserve(img);
-                    }
+                memeGrid.innerHTML = memes.map(meme => `
+                    <div class="meme-container" data-id="${meme.id}">
+                        <div class="p-4">
+                            <img src="https://via.placeholder.com/800x600/FFE4C4/000000?text=Loading..." 
+                                data-src="${meme.url}" 
+                                class="meme-image lazy-load"
+                                loading="lazy"
+                                alt="${meme.title}"
+                                onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=Image+Error'">
+                        </div>
+                        <div class="p-4 bg-white/95">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-xl font-bold text-orange-900">${meme.title}</h3>
+                                <span class="text-sm text-orange-600"><i class="fas fa-user mr-1"></i>${meme.author}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-orange-600 font-medium">
+                                    <i class="fas fa-heart mr-1"></i>
+                                    <span class="vote-count">${meme.votes}</span>
+                                </span>
+                                <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-50">
+                                    Vote
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.onload = () => img.style.backgroundColor = 'transparent';
+                            img.src = img.dataset.src;
+                            observer.unobserve(img);
+                        }
+                    });
+                }, { 
+                    rootMargin: '200px',
+                    threshold: 0.1
                 });
-            }, { rootMargin: '200px' });
 
-            document.querySelectorAll('.lazy-load').forEach(img => observer.observe(img));
+                document.querySelectorAll('.lazy-load').forEach(img => observer.observe(img));
+            } catch (error) {
+                console.error('Render error:', error);
+                alert("Error loading memes: " + error.message);
+            }
         }
 
         document.addEventListener('click', async function(e) {
@@ -241,7 +269,10 @@
             }
         });
 
-        window.onload = () => renderMemes();
+        window.onload = () => {
+            renderMemes();
+            if (window.ethereum?.isConnected()) init();
+        };
     </script>
 </body>
 </html>
