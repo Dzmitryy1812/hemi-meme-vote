@@ -1,28 +1,79 @@
+@@ -1,113 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HEMIMEME - Meme Gallery</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    .meme-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .meme-card:hover {
+      transform: translateY(-5px);
+    }
+    .meme-image {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body class="bg-orange-50 text-orange-900 font-sans min-h-screen">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HEMIMEME - URL Upload</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .meme-container {
+            max-width: 800px;
+            margin: 2rem auto;
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
         }
-        .meme-container:hover {
-            transform: translateY(-5px);
-        }
+
+  <!-- Header -->
+  <header class="bg-orange-600 text-white px-4 py-4 flex justify-between items-center shadow sticky top-0 z-10">
+    <div class="flex items-center gap-2">
+      <img src="https://i.imgur.com/SyOVYBY.jpeg" alt="HEMIMEME Logo" class="h-8 w-auto rounded-full">
+      <h1 class="text-xl font-bold hidden sm:block">
+        <i class="fas fa-images"></i> HEMIMEME
+      </h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="connectButton" class="bg-white text-orange-600 px-4 py-2 rounded shadow hover:bg-orange-100 transition flex items-center">
+        <i class="fas fa-wallet mr-2"></i>
+        <span class="hidden sm:inline">Connect Wallet</span>
+      </button>
+    </div>
+  </header>
         .meme-image {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 15px 15px 0 0;
+            max-width: 100%;
+            max-height: 80vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
         }
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto py-8 px-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Meme 1 -->
+      <div class="meme-card bg-white rounded-lg shadow-md overflow-hidden">
+        <img src="/public/memes/1.jpg" alt="Meme 1" class="meme-image">
+        <div class="p-4">
+          <h3 class="text-sm font-semibold">Meme Title 1</h3>
+          <div class="flex justify-between items-center mt-2">
+            <span class="text-xs text-orange-600">
+              <i class="fas fa-heart mr-1"></i> 42
+            </span>
+          </div>
         .upload-modal {
             background: rgba(0,0,0,0.5);
             position: fixed;
@@ -35,82 +86,123 @@
             align-items: center;
             z-index: 1000;
         }
-        .lazy-load {
-            background: #f3f4f6;
-            min-height: 300px;
-        }
     </style>
 </head>
 <body class="bg-gradient-to-b from-orange-50 to-orange-100 min-h-screen">
     <!-- Header -->
     <header class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-xl">
         <div class="flex items-center gap-3">
-            <img src="https://i.imgur.com/SyOVYBY.jpeg" class="h-12 w-12 rounded-full ring-2 ring-white/30 hover:ring-orange-200 transition-all" alt="HEMIMEME Logo">
+            <img src="https://i.imgur.com/SyOVYBY.jpeg" 
+                 class="h-12 w-12 rounded-full ring-2 ring-white/30 hover:ring-orange-200 transition-all"
+                 alt="HEMIMEME Logo">
             <h1 class="text-3xl font-bold font-mono">
                 <i class="fas fa-fire mr-2"></i>HEMIMEME
             </h1>
         </div>
+      </div>
+
+      <!-- Meme 2 -->
+      <div class="meme-card bg-white rounded-lg shadow-md overflow-hidden">
+        <img src="/public/memes/2.jpg" alt="Meme 2" class="meme-image">
+        <div class="p-4">
+          <h3 class="text-sm font-semibold">Meme Title 2</h3>
+          <div class="flex justify-between items-center mt-2">
+            <span class="text-xs text-orange-600">
+              <i class="fas fa-heart mr-1"></i> 35
+            </span>
+          </div>
         <div class="flex items-center gap-4">
-            <button id="uploadButton" class="bg-orange-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-orange-600 transition-all">
+            <button id="uploadButton" 
+                    class="bg-orange-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-orange-600 transition-all">
                 <i class="fas fa-plus mr-2"></i> Add Meme
             </button>
-            <button id="connectButton" class="bg-white/90 text-orange-600 px-6 py-3 rounded-full shadow-lg hover:bg-white hover:scale-105 transition-all">
+            <button id="connectButton" 
+                    class="bg-white/90 text-orange-600 px-6 py-3 rounded-full shadow-lg hover:bg-white hover:scale-105 transition-all">
                 <i class="fas fa-wallet mr-2"></i> Connect
             </button>
         </div>
+      </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-12">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="memeGrid">
-            <!-- Memes will be loaded here -->
+      <!-- Meme 3 -->
+      <div class="meme-card bg-white rounded-lg shadow-md overflow-hidden">
+        <img src="/public/memes/3.jpg" alt="Meme 3" class="meme-image">
+        <div class="p-4">
+          <h3 class="text-sm font-semibold">Meme Title 3</h3>
+          <div class="flex justify-between items-center mt-2">
+            <span class="text-xs text-orange-600">
+              <i class="fas fa-heart mr-1"></i> 28
+            </span>
+          </div>
         </div>
+      </div>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12" id="memeGrid">
+        <!-- Memes will be loaded here -->
     </main>
 
+      <!-- Meme 4-6 аналогично -->
     <!-- Add Meme Modal -->
-    <div class="upload-modal" id="uploadModal" aria-hidden="true" role="dialog">
-        <div class="bg-white p-6 rounded-xl w-96 max-w-[90vw]">
+    <div class="upload-modal" id="uploadModal">
+        <div class="bg-white p-6 rounded-xl w-96">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold">Add New Meme</h2>
                 <button id="closeModal" class="text-orange-600 hover:text-orange-800">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            
             <form id="memeForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-2">Discord Username</label>
-                    <input type="text" id="discordName" required class="w-full px-4 py-2 border rounded-lg" placeholder="username#1234">
+                    <input type="text" 
+                           id="discordName" 
+                           required
+                           class="w-full px-4 py-2 border rounded-lg"
+                           placeholder="username#1234">
                 </div>
+                
                 <div>
                     <label class="block text-sm font-medium mb-2">Meme Title</label>
-                    <input type="text" id="memeTitle" required class="w-full px-4 py-2 border rounded-lg">
+                    <input type="text" 
+                           id="memeTitle" 
+                           required
+                           class="w-full px-4 py-2 border rounded-lg">
                 </div>
+                
                 <div>
                     <label class="block text-sm font-medium mb-2">Image URL</label>
-                    <input type="url" id="memeUrl" required class="w-full px-4 py-2 border rounded-lg" placeholder="https://example.com/meme.jpg">
-                    <p class="text-sm text-gray-500 mt-1">Supported formats: JPG, PNG, GIF</p>
+                    <input type="url" 
+                           id="memeUrl" 
+                           required
+                           class="w-full px-4 py-2 border rounded-lg"
+                           placeholder="https://example.com/meme.jpg">
                 </div>
+                
                 <div class="flex justify-end gap-4">
-                    <button type="button" id="cancelBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50" id="submitBtn">
+                    <button type="button" 
+                            id="cancelBtn" 
+                            class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
                         Add Meme
                     </button>
                 </div>
             </form>
         </div>
     </div>
+  </main>
 
+  <!-- Footer -->
+  <footer class="bg-orange-600 text-white py-4 mt-8">
+    <div class="container mx-auto px-4 text-center text-sm">
+      <p>HEMIMEME © 2025 • All memes belong to their respective authors</p>
+    </div>
+  </footer>
     <script>
-        const contractAddress = "0x4d569B8Fc88C33A5047Cb32B0e45366D3eBeaA77";
-        const abi = [
-            "function vote(uint memeId) public",
-            "function getVotes(uint memeId) public view returns (uint)"
-        ];
-
-        let provider, signer, contract;
-        let isConnected = false;
-
-        const memes = [
+        let memes = [
             {id: 1, title: 'Doge Classic', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
             {id: 2, title: 'Surprised Pikachu', votes: 2345, url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678'},
             {id: 3, title: 'Success Kid', votes: 1789, url: 'https://dzmitryy1812.github.io/public/memes/3.jpg', author: 'kidlover#9012'},
@@ -119,160 +211,107 @@
             {id: 6, title: 'Drake Hotline Bling', votes: 3120, url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234'}
         ];
 
-        async function init() {
-            try {
-                if (!window.ethereum) {
-                    alert("Please install MetaMask!");
-                    return false;
-                }
-                
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                signer = provider.getSigner();
-                contract = new ethers.Contract(contractAddress, abi, signer);
-                
-                isConnected = true;
-                document.getElementById('connectButton').textContent = "Connected";
-                
-                return true;
-            } catch (error) {
-                console.error('Connection error:', error);
-                alert("Connection failed: " + error.message);
-                return false;
-            }
-        }
-
+  <script>
+    // Проверка подключения кошелька
+    document.getElementById('connectButton').addEventListener('click', async () => {
+      if (window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const walletAddress = accounts[0];
+          document.getElementById('connectButton').innerHTML = `
+            <i class="fas fa-check-circle mr-2"></i>
+            ${walletAddress.substring(0, 6)}...${walletAddress.slice(-4)}
+          `;
+        } catch (error) {
+          console.error('Error connecting wallet:', error);
+        // Render memes
         function renderMemes() {
-            try {
-                const memeGrid = document.getElementById('memeGrid');
-                if (!memeGrid) throw new Error('Meme grid container not found');
-
-                memeGrid.innerHTML = memes.map(meme => `
-                    <div class="meme-container" data-id="${meme.id}">
-                        <div class="p-4">
-                            <img src="https://via.placeholder.com/800x600/FFE4C4/000000?text=Loading..." 
-                                data-src="${meme.url}" 
-                                class="meme-image lazy-load"
-                                loading="lazy"
-                                alt="${meme.title}"
-                                onerror="this.onerror=null;this.src='https://via.placeholder.com/800x600?text=Image+Error'">
+            const memeGrid = document.getElementById('memeGrid');
+            memeGrid.innerHTML = memes.map(meme => `
+                <div class="meme-container mb-8" data-id="${meme.id}">
+                    <div class="p-4">
+                        <img src="${meme.url}" 
+                             class="meme-image mx-auto"
+                             alt="${meme.title}"
+                             onerror="this.src='https://via.placeholder.com/800x600?text=Image+Error'">
+                    </div>
+                    <div class="p-4 bg-white/95">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xl font-bold text-orange-900">${meme.title}</h3>
+                            <span class="text-sm text-orange-600">
+                                <i class="fas fa-user mr-1"></i>${meme.author}
+                            </span>
                         </div>
-                        <div class="p-4 bg-white/95">
-                            <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-xl font-bold text-orange-900">${meme.title}</h3>
-                                <span class="text-sm text-orange-600"><i class="fas fa-user mr-1"></i>${meme.author}</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-orange-600 font-medium">
-                                    <i class="fas fa-heart mr-1"></i>
-                                    <span class="vote-count">${meme.votes}</span>
-                                </span>
-                                <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 disabled:opacity-50">
-                                    Vote
-                                </button>
-                            </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-orange-600 font-medium">
+                                <i class="fas fa-heart mr-1"></i>
+                                <span class="vote-count">${meme.votes}</span>
+                            </span>
+                            <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
+                                Vote
+                            </button>
                         </div>
                     </div>
-                `).join('');
-
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const img = entry.target;
-                            img.onload = () => img.style.backgroundColor = 'transparent';
-                            img.src = img.dataset.src;
-                            observer.unobserve(img);
-                        }
-                    });
-                }, { 
-                    rootMargin: '200px',
-                    threshold: 0.1
-                });
-
-                document.querySelectorAll('.lazy-load').forEach(img => observer.observe(img));
-            } catch (error) {
-                console.error('Render error:', error);
-                alert("Error loading memes: " + error.message);
-            }
+                </div>
+            `).join('');
         }
+      }
+    });
+  </script>
 
-        document.addEventListener('click', async function(e) {
-            if (e.target.classList.contains('vote-btn')) {
-                const voteBtn = e.target;
-                const memeCard = voteBtn.closest('.meme-container');
-                const memeId = memeCard.dataset.id;
-
-                if (!signer) {
-                    alert("Please connect your wallet first!");
-                    return;
-                }
-
-                voteBtn.disabled = true;
-                voteBtn.textContent = "Voting...";
-
-                try {
-                    const tx = await contract.vote(memeId);
-                    await tx.wait();
-                    const newVotes = await contract.getVotes(memeId);
-                    memeCard.querySelector('.vote-count').textContent = newVotes.toString();
-                } catch (err) {
-                    console.error(err);
-                    alert("Error voting: " + (err.message || err));
-                } finally {
-                    voteBtn.disabled = false;
-                    voteBtn.textContent = "Vote";
-                }
+        // Voting system
+        document.addEventListener('click', function(e) {
+            if(e.target.classList.contains('vote-btn')) {
+                const memeCard = e.target.closest('.meme-container');
+                const voteCount = memeCard.querySelector('.vote-count');
+                voteCount.textContent = parseInt(voteCount.textContent) + 1;
+                
+                e.target.classList.add('bg-orange-700');
+                setTimeout(() => e.target.classList.remove('bg-orange-700'), 200);
             }
         });
 
-        document.getElementById('uploadButton').addEventListener('click', () => {
-            document.getElementById('uploadModal').style.display = 'flex';
-        });
-
-        [document.getElementById('closeModal'), document.getElementById('cancelBtn')].forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.getElementById('uploadModal').style.display = 'none';
-            });
-        });
-
-        document.getElementById('memeForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-
-            const urlInput = document.getElementById('memeUrl');
-            if (!/\.(jpe?g|png|gif)$/i.test(urlInput.value)) {
-                alert("Please enter a valid image URL (jpg, png, gif)");
-                submitBtn.disabled = false;
-                return;
-            }
-
-            memes.push({
-                id: memes.length + 1,
-                title: document.getElementById('memeTitle').value,
-                votes: 0,
-                url: urlInput.value,
-                author: document.getElementById('discordName').value
-            });
-
-            renderMemes();
-            document.getElementById('uploadModal').style.display = 'none';
-            submitBtn.disabled = false;
-        });
-
+        // Wallet connection
         document.getElementById('connectButton').addEventListener('click', async () => {
             try {
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-                if (await init()) alert("Wallet connected successfully!");
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const btn = document.getElementById('connectButton');
+                btn.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${accounts[0].slice(0,6)}...${accounts[0].slice(-4)}`;
+                btn.classList.add('bg-green-100', 'text-green-700', 'hover:scale-100');
             } catch (error) {
                 alert(`Error: ${error.message}`);
             }
         });
 
-        window.onload = () => {
+        // Modal handling
+        const modal = document.getElementById('uploadModal');
+        const showModal = () => modal.style.display = 'flex';
+        const hideModal = () => modal.style.display = 'none';
+
+        document.getElementById('uploadButton').addEventListener('click', showModal);
+        document.getElementById('closeModal').addEventListener('click', hideModal);
+        document.getElementById('cancelBtn').addEventListener('click', hideModal);
+
+        // Add new meme
+        document.getElementById('memeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newMeme = {
+                id: memes.length + 1,
+                title: document.getElementById('memeTitle').value,
+                votes: 0,
+                url: document.getElementById('memeUrl').value,
+                author: document.getElementById('discordName').value
+            };
+
+            memes.push(newMeme);
             renderMemes();
-            if (window.ethereum?.isConnected()) init();
-        };
+            hideModal();
+            e.target.reset();
+        });
+
+        // Initial render
+        renderMemes();
     </script>
 </body>
 </html>
