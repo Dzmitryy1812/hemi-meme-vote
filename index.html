@@ -91,8 +91,8 @@
     </div>
   </div>
 
-  <script type="module">
-    import { connectWallet } from './connectButton.js';
+ //<script type="module">
+   //import { connectWallet } from './connectButton.js';
 
     // Массив мемов
     const memes = [
@@ -191,5 +191,65 @@
     // Подключение кошелька
     document.getElementById('connectButton').addEventListener('click', connectWallet);
   </script>
+<script type="module">
+  import { connectWallet, loadMemes, voteMeme, addMeme } from './blockchain.js';
+
+  const connectButton = document.getElementById('connectButton');
+  const votingGrid = document.getElementById('votingGrid');
+
+  connectButton.addEventListener('click', async () => {
+    const connected = await connectWallet();
+    if (connected) {
+      connectButton.textContent = 'Wallet Connected';
+      const memes = await loadMemes();
+      renderMemes(memes);
+    }
+  });
+
+  function renderMemes(memes) {
+    votingGrid.innerHTML = '';
+    memes.forEach(meme => {
+      const div = document.createElement('div');
+      div.className = 'meme-card';
+      div.innerHTML = `
+        <img src="${meme.cid.startsWith('http') ? meme.cid : 'https://ipfs.io/ipfs/' + meme.cid}" alt="Meme ${meme.id}" class="meme-image mx-auto mb-4" />
+        <h3 class="text-xl font-bold text-orange-600">${meme.id}</h3>
+        <p class="text-orange-500 font-medium">${meme.votes} votes</p>
+        <button class="vote-btn bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600">Vote Now</button>
+      `;
+
+      div.querySelector('button').addEventListener('click', async () => {
+        const success = await voteMeme(meme.id);
+        if (success) {
+          const updatedMemes = await loadMemes();
+          renderMemes(updatedMemes);
+        }
+      });
+
+      votingGrid.appendChild(div);
+    });
+  }
+
+  // Если есть форма добавления мемов, можно добавить обработчик:
+  const memeForm = document.getElementById('memeForm');
+  if (memeForm) {
+    memeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const cidInput = document.getElementById('memeUrl');
+      const cid = cidInput.value.trim();
+      if (!cid) {
+        alert('Введите CID или URL мемa');
+        return;
+      }
+      const added = await addMeme(cid);
+      if (added) {
+        cidInput.value = '';
+        const memes = await loadMemes();
+        renderMemes(memes);
+      }
+    });
+  }
+</script>
+
 </body>
 </html>
