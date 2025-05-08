@@ -1,5 +1,5 @@
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
-// Объявляем объект HEMI_NETWORK с правильным chainId в hex
+
 const HEMI_NETWORK = {
   chainId: '0xA867', // hex для 43111
   chainName: 'Hemi',
@@ -15,18 +15,15 @@ const HEMI_NETWORK = {
 let isConnected = false;
 let currentAccount = null;
 
-// Сохраняем состояние в localStorage
 const updateConnectionState = (state) => {
   localStorage.setItem('walletConnection', JSON.stringify(state));
 };
 
-// Загружаем состояние при запуске
 const loadConnectionState = () => {
   const state = localStorage.getItem('walletConnection');
   return state ? JSON.parse(state) : { isConnected: false };
 };
 
-// Основная функция подключения
 export async function connectWallet() {
   if (typeof window.ethereum === 'undefined') {
     alert('Please install MetaMask!');
@@ -35,40 +32,48 @@ export async function connectWallet() {
 
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const chainId = await provider.send('eth_chainId', []);
+    let chainId = await provider.send('eth_chainId', []);
 
-    // Проверяем, что мы на нужной сети
+    // Если не на нужной сети, пытаемся переключиться
     if (chainId !== HEMI_NETWORK.chainId) {
-      // Переключение сети
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: HEMI_NETWORK.chainId }]
         });
       } catch (switchError) {
-        // Если сеть не добавлена, добавляем её
+        // Если сеть не добавлена, добавляем её и снова пытаемся переключиться
         if (switchError.code === 4902) {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [HEMI_NETWORK]
-          });
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [HEMI_NETWORK]
+            });
+            // После добавления обязательно пробуем переключиться ещё раз!
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: HEMI_NETWORK.chainId }]
+            });
+          } catch (addError) {
+            alert('Не удалось добавить сеть Hemi');
+            return;
+          }
         } else {
-          throw switchError;
+          alert('Ошибка переключения сети');
+          return;
         }
       }
     }
 
-    // Запрос аккаунтов
+    // Теперь мы точно на нужной сети, подключаем аккаунт
     await provider.send('eth_requestAccounts', []);
     const signer = provider.getSigner();
     currentAccount = await signer.getAddress();
     isConnected = true;
 
-    // Обновляем состояние
     updateConnectionState({ isConnected });
     updateButtonState();
 
-    // Обработчик смены аккаунтов
     window.ethereum.on('accountsChanged', (accounts) => {
       if (accounts.length === 0) {
         handleDisconnect();
@@ -83,20 +88,17 @@ export async function connectWallet() {
   }
 }
 
-// Обработчик отключения
 const handleDisconnect = () => {
   isConnected = false;
   currentAccount = null;
   updateConnectionState({ isConnected: false });
   updateButtonState();
 
-  // Удаляем слушатели
   if (window.ethereum?.removeListener) {
     window.ethereum.removeListener('accountsChanged', () => {});
   }
 };
 
-// Проверка при загрузке страницы
 window.addEventListener('load', async () => {
   const state = loadConnectionState();
   if (state.isConnected && typeof window.ethereum !== 'undefined') {
@@ -113,7 +115,6 @@ window.addEventListener('load', async () => {
   }
 });
 
-// Обновление текста и стилей кнопки
 function updateButtonState() {
   const button = document.getElementById('connectButton');
   if (!button) return;
