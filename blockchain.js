@@ -1,7 +1,7 @@
 // blockchain.js
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
-const contractAddress = '0x715045cea81d1dcc604b6a379b94d6049cdaa5a0';
+const contractAddress = '0x04cAEc2fA8Cf5b0D1AC71B61A12917456d2f27BC';
 const contractABI = [
   {
     "inputs": [
