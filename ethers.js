@@ -1,3 +1,4 @@
+//ethers.js
 import { ethers } from 'ethers';
 
 // Адрес и ABI вашего контракта
