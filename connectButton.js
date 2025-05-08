@@ -1,13 +1,13 @@
 const HEMI_NETWORK = {
-  chainId: '43111', // Замените на реальный chainId Hemi Network (hex)
+  chainId: '0xA867', // Hex value for 43111
   chainName: 'Hemi Network',
   nativeCurrency: {
     name: 'HEMI',
-    symbol: 'ETH',
+    symbol: 'HEMI', // Исправлен символ с ETH на HEMI
     decimals: 18
   },
-  rpcUrls: ['https://rpc.hemi.network/rpc'], 
-  blockExplorerUrls: ['https://explorer.hemi.xyz'] 
+  rpcUrls: ['https://rpc.hemi.network/rpc'],
+  blockExplorerUrls: ['https://explorer.hemi.xyz']
 };
 
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
@@ -16,7 +16,12 @@ let isConnected = false;
 let currentAccount = null;
 let currentChainId = null;
 
-// Добавленные функции
+// Функция преобразования chainId
+const toHexChainId = (chainId) => {
+  if (typeof chainId === 'number') return `0x${chainId.toString(16)}`;
+  return chainId.startsWith('0x') ? chainId : `0x${parseInt(chainId, 10).toString(16)}`;
+};
+
 const switchToHemiNetwork = async () => {
   try {
     await window.ethereum.request({
@@ -28,7 +33,8 @@ const switchToHemiNetwork = async () => {
     if (error.code === 4902) {
       return await addHemiNetwork();
     }
-    console.error('Failed to switch network:', error);
+    console.error('Network switch failed:', error);
+    alert('Failed to switch network. Please try manually.');
     return false;
   }
 };
@@ -37,112 +43,98 @@ const addHemiNetwork = async () => {
   try {
     await window.ethereum.request({
       method: 'wallet_addEthereumChain',
-      params: [HEMI_NETWORK]
+      params: [{
+        ...HEMI_NETWORK,
+        chainId: HEMI_NETWORK.chainId
+      }]
     });
     return true;
   } catch (error) {
-    console.error('Failed to add network:', error);
+    console.error('Network addition failed:', error);
+    alert('Failed to add Hemi Network. Please contact support.');
     return false;
   }
 };
 
 const checkNetwork = async () => {
-  const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-  return chainId === HEMI_NETWORK.chainId;
+  try {
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    return chainId.toLowerCase() === HEMI_NETWORK.chainId.toLowerCase();
+  } catch (error) {
+    console.error('Network check failed:', error);
+    return false;
+  }
 };
 
-// Обновленная функция connectWallet
 export async function connectWallet() {
   if (typeof window.ethereum === 'undefined') {
-    alert('Please install MetaMask!');
+    alert('MetaMask extension not detected!');
     return;
   }
 
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const state = loadConnectionState();
-
-    if (!state.isConnected) {
-      // Проверка и смена сети
-      const isCorrectNetwork = await checkNetwork();
-      if (!isCorrectNetwork) {
+    
+    if (!isConnected) {
+      if (!await checkNetwork()) {
+        const confirmSwitch = confirm('Switch to Hemi Network?');
+        if (!confirmSwitch) return;
+        
         const switched = await switchToHemiNetwork();
         if (!switched) {
-          alert('Please connect to Hemi Network to continue');
+          handleDisconnect();
           return;
         }
       }
 
-      await provider.send('eth_requestAccounts', []);
-      const signer = provider.getSigner();
-      currentAccount = await signer.getAddress();
-      currentChainId = await signer.getChainId();
+      const accounts = await provider.send('eth_requestAccounts', []);
+      currentAccount = accounts[0];
+      currentChainId = await provider.send('eth_chainId');
       isConnected = true;
 
-      // Обработчики событий
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
     } else {
       handleDisconnect();
     }
 
-    updateConnectionState({ isConnected });
     updateUI();
     
   } catch (error) {
-    console.error('Connection error:', error);
-    alert('Connection error. Please try again.');
+    console.error('Connection failed:', error);
+    handleDisconnect();
+    alert('Connection failed. Please try again.');
   }
 }
 
-// Новые обработчики событий
-const handleAccountsChanged = (accounts) => {
-  if (accounts.length === 0) {
-    handleDisconnect();
-  } else {
-    currentAccount = accounts[0];
-    updateUI();
-  }
-};
-
-const handleChainChanged = (chainId) => {
-  currentChainId = parseInt(chainId, 16);
-  if (chainId !== HEMI_NETWORK.chainId) {
-    alert('Please switch back to Hemi Network');
+const handleChainChanged = (newChainId) => {
+  newChainId = toHexChainId(newChainId);
+  currentChainId = newChainId;
+  
+  if (newChainId !== HEMI_NETWORK.chainId) {
+    alert('Network changed! Please reconnect to Hemi Network.');
     handleDisconnect();
   }
   updateUI();
 };
 
-// Обновленная функция updateUI
-const updateUI = () => {
-  updateButtonState();
-  updateNetworkIndicator();
-};
-
-const updateNetworkIndicator = () => {
-  const networkIndicator = document.getElementById('networkIndicator');
-  if (networkIndicator) {
-    networkIndicator.textContent = currentChainId === parseInt(HEMI_NETWORK.chainId, 16) 
-      ? 'Connected to Hemi Network' 
-      : 'Wrong Network';
-  }
-};
-
-// В обработчик загрузки страницы добавьте:
+// Обновленная функция проверки сети при загрузке
 window.addEventListener('load', async () => {
-  const state = loadConnectionState();
-  if (state.isConnected && typeof window.ethereum !== 'undefined') {
+  if (typeof window.ethereum !== 'undefined') {
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+      const [accounts, chainId] = await Promise.all([
+        window.ethereum.request({ method: 'eth_accounts' }),
+        window.ethereum.request({ method: 'eth_chainId' })
+      ]);
       
+      currentChainId = toHexChainId(chainId);
       if (accounts.length > 0 && currentChainId === HEMI_NETWORK.chainId) {
         isConnected = true;
         currentAccount = accounts[0];
         updateUI();
       }
     } catch (error) {
+      console.error('Initial connection check failed:', error);
       handleDisconnect();
     }
   }
