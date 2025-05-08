@@ -7,7 +7,7 @@ const contractABI = [
     "inputs": [
       {
         "internalType": "string",
-        "name": "_cid",
+        "name": "_name",
         "type": "string"
       }
     ],
@@ -39,7 +39,7 @@ const contractABI = [
       {
         "indexed": false,
         "internalType": "string",
-        "name": "cid",
+        "name": "name",
         "type": "string"
       }
     ],
@@ -86,7 +86,7 @@ const contractABI = [
         "type": "uint256"
       }
     ],
-    "name": "getCid",
+    "name": "getName",
     "outputs": [
       {
         "internalType": "string",
@@ -165,7 +165,7 @@ const contractABI = [
     "outputs": [
       {
         "internalType": "string",
-        "name": "cid",
+        "name": "name",
         "type": "string"
       },
       {
@@ -210,15 +210,16 @@ export async function connectWallet() {
   return true;
 }
 
+// Загрузка мемов
 export async function loadMemes() {
   const count = (await contract.memeCount()).toNumber();
   const memes = [];
 
-  for (let i = 1; i <= count; i++) {
+  for (let i = 0; i < count; i++) {
     const meme = await contract.memes(i);
     memes.push({
       id: i,
-      cid: meme.cid,
+      name: meme.name,
       votes: meme.votes.toNumber()
     });
   }
@@ -226,6 +227,7 @@ export async function loadMemes() {
   return memes;
 }
 
+// Голосование за мем
 export async function voteMeme(memeId) {
   try {
     const userAddress = await signer.getAddress();
@@ -245,9 +247,10 @@ export async function voteMeme(memeId) {
   }
 }
 
-export async function addMeme(cid) {
+// Добавление нового мема
+export async function addMeme(name) {
   try {
-    const tx = await contract.addMeme(cid);
+    const tx = await contract.addMeme(name);
     await tx.wait();
     alert('Мем успешно добавлен!');
     return true;
