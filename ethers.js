@@ -112,9 +112,9 @@ async function main() {
     }
 
     // Пример: добавить новый мем (только владелец)
-    // const tx = await contract.addMeme("New Meme Name");
-    // await tx.wait();
-    // console.log("Мем добавлен");
+    const tx = await contract.addMeme("New Meme Name");
+    await tx.wait();
+    console.log("Мем добавлен");
 
   } catch (error) {
     console.error('Ошибка при работе с контрактом:', error);
