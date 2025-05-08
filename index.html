@@ -6,6 +6,7 @@
   <title>HEMIMEME - URL Upload</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.min.js"></script> <!-- Подключаем ethers.js -->
   <style>
     .meme-container {
       max-width: 800px;
@@ -103,16 +104,23 @@
       }
 
       try {
+        // Создаем провайдер для подключения к сети через MetaMask
         const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send('eth_requestAccounts', []); // Запрос на подключение кошелька
+        
+        // Запрашиваем доступ к аккаунтам
+        await provider.send('eth_requestAccounts', []);
+        
+        // Получаем текущий аккаунт
         const signer = provider.getSigner();
         const address = await signer.getAddress();
-        
-        // Изменяем текст кнопки на адрес кошелька
+
+        // Обновляем кнопку на отображение адреса
         const button = document.getElementById('connectButton');
         button.textContent = `Disconnect (${address.slice(0, 6)}...${address.slice(-4)})`;
         button.classList.remove('bg-white/90', 'text-orange-600');
         button.classList.add('bg-red-600', 'text-white');
+
+        console.log(`Connected to ${address}`);
       } catch (error) {
         console.error('Connection error:', error);
       }
