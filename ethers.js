@@ -6,7 +6,7 @@ const contractABI = [
     "inputs": [
       {
         "internalType": "string",
-        "name": "_cid",
+        "name": "_name",
         "type": "string"
       }
     ],
@@ -21,7 +21,70 @@ const contractABI = [
     "stateMutability": "nonpayable",
     "type": "function"
   },
-  // ... полный ABI сюда ...
+  {
+    "inputs": [],
+    "name": "memeCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_memeId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getName",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_memeId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getVotes",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_memeId",
+        "type": "uint256"
+      }
+    ],
+    "name": "vote",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
 ];
 
 async function main() {
@@ -37,10 +100,24 @@ async function main() {
   const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
   try {
+    // Получаем количество мемов
     const memeCount = await contract.memeCount();
     console.log('Всего мемов:', memeCount.toString());
+
+    // Получаем и выводим названия и голоса всех мемов
+    for (let i = 0; i < memeCount; i++) {
+      const name = await contract.getName(i);
+      const votes = await contract.getVotes(i);
+      console.log(`Мем #${i}: ${name} - Голосов: ${votes.toString()}`);
+    }
+
+    // Пример: добавить новый мем (только владелец)
+    // const tx = await contract.addMeme("New Meme Name");
+    // await tx.wait();
+    // console.log("Мем добавлен");
+
   } catch (error) {
-    console.error('Ошибка при получении memeCount:', error);
+    console.error('Ошибка при работе с контрактом:', error);
   }
 }
 
