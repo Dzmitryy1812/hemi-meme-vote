@@ -87,10 +87,11 @@
     </div>
   </div>
 
-  <script type="module">
-    import { connectWallet } from './connectButton.js';
-    document.getElementById('connectButton').addEventListener('click', connectWallet);
-  </script>
+ <script type="module">
+  import { connectWallet } from './connectButton.js';
+  document.getElementById('connectButton').onclick = connectWallet;
+</script>
+
 
   <script>
     const memes = [
