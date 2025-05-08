@@ -84,7 +84,8 @@ export async function connectWallet() {
     });
   } catch (error) {
     console.error('Connection error:', error);
-    alert('Connection error. Please try again.');
+    alert('Error: ' + (error && error.message ? error.message : JSON.stringify(error)));
+
   }
 }
 
