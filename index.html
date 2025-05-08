@@ -97,12 +97,56 @@
     </div>
   </div>
 
-  <script type="module">
-    import { connectWallet } from './connectButton.js';
-    
-    // Initialize wallet connection
-    document.getElementById('connectButton').addEventListener('click', connectWallet);
-    
+<script type="module">
+  import { connectWallet } from './connectButton.js';
+
+  const HEMI_NETWORK = {
+    chainId: '0xA867', // hex
+    chainName: 'Hemi Network',
+    nativeCurrency: {
+      name: 'HEMI',
+      symbol: 'ETH',
+      decimals: 18
+    },
+    rpcUrls: ['https://rpc.hemi.network/rpc'],
+    blockExplorerUrls: ['https://explorer.hemi.xyz']
+  };
+
+  async function switchToHemiNetwork() {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: HEMI_NETWORK.chainId }],
+      });
+      console.log('Переключено на Hemi Network');
+    } catch (error) {
+      if (error.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [HEMI_NETWORK],
+          });
+          console.log('Hemi Network добавлена');
+        } catch (addError) {
+          console.error('Ошибка при добавлении сети:', addError);
+          alert('Не удалось добавить Hemi Network.');
+          return;
+        }
+      } else {
+        console.error('Ошибка при переключении сети:', error);
+        alert('Ошибка при переключении сети.');
+        return;
+      }
+    }
+    // После переключения или добавления — подключаем кошелек
+    await connectWallet();
+  }
+
+  // Обязательно дождитесь, чтобы DOM был загружен
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('connectButton').addEventListener('click', switchToHemiNetwork);
+  });
+</script>
     // Memes data
     const memes = [
       {id: 1, title: 'Classic Doge', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
