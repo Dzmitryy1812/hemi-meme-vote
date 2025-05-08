@@ -1,141 +1,94 @@
-const HEMI_NETWORK = {
-  chainId: '0xA867', // Hex value for 43111
-  chainName: 'Hemi Network',
-  nativeCurrency: {
-    name: 'ETH',
-    symbol: 'ETH', //
-    decimals: 18
-  },
-  rpcUrls: ['https://rpc.hemi.network/rpc'],
-  blockExplorerUrls: ['https://explorer.hemi.xyz']
-};
-
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
 let isConnected = false;
 let currentAccount = null;
-let currentChainId = null;
 
-// Функция преобразования chainId
-const toHexChainId = (chainId) => {
-  if (typeof chainId === 'number') return `0x${chainId.toString(16)}`;
-  return chainId.startsWith('0x') ? chainId : `0x${parseInt(chainId, 10).toString(16)}`;
+// Сохраняем состояние в localStorage
+const updateConnectionState = (state) => {
+  localStorage.setItem('walletConnection', JSON.stringify(state));
 };
 
-const switchToHemiNetwork = async () => {
-  try {
-    await window.ethereum.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{ chainId: HEMI_NETWORK.chainId }]
-    });
-    return true;
-  } catch (error) {
-    if (error.code === 4902) {
-      return await addHemiNetwork();
-    }
-    console.error('Network switch failed:', error);
-    alert('Failed to switch network. Please try manually.');
-    return false;
-  }
-};
-
-const addHemiNetwork = async () => {
-  try {
-    await window.ethereum.request({
-      method: 'wallet_addEthereumChain',
-      params: [{
-        ...HEMI_NETWORK,
-        chainId: HEMI_NETWORK.chainId
-      }]
-    });
-    return true;
-  } catch (error) {
-    console.error('Network addition failed:', error);
-    alert('Failed to add Hemi Network. Please contact support.');
-    return false;
-  }
-};
-
-const checkNetwork = async () => {
-  try {
-    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-    return chainId.toLowerCase() === HEMI_NETWORK.chainId.toLowerCase();
-  } catch (error) {
-    console.error('Network check failed:', error);
-    return false;
-  }
+// Загружаем состояние при запуске
+const loadConnectionState = () => {
+  const state = localStorage.getItem('walletConnection');
+  return state ? JSON.parse(state) : { isConnected: false };
 };
 
 export async function connectWallet() {
   if (typeof window.ethereum === 'undefined') {
-    alert('MetaMask extension not detected!');
+    alert('Please install MetaMask!');
     return;
   }
 
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    
-    if (!isConnected) {
-      if (!await checkNetwork()) {
-        const confirmSwitch = confirm('Switch to Hemi Network?');
-        if (!confirmSwitch) return;
-        
-        const switched = await switchToHemiNetwork();
-        if (!switched) {
-          handleDisconnect();
-          return;
-        }
-      }
+    const state = loadConnectionState();
 
-      const accounts = await provider.send('eth_requestAccounts', []);
-      currentAccount = accounts[0];
-      currentChainId = await provider.send('eth_chainId');
+    if (!state.isConnected) {
+      await provider.send('eth_requestAccounts', []);
+      const signer = provider.getSigner();
+      currentAccount = await signer.getAddress();
       isConnected = true;
-
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
+      
+      // Добавляем обработчик изменения аккаунтов
+      window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length === 0) {
+          handleDisconnect();
+        } else {
+          currentAccount = accounts[0];
+          updateButtonState();
+        }
+      });
     } else {
       handleDisconnect();
     }
 
-    updateUI();
+    updateConnectionState({ isConnected });
+    updateButtonState();
     
   } catch (error) {
-    console.error('Connection failed:', error);
-    handleDisconnect();
-    alert('Connection failed. Please try again.');
+    console.error('Connection error:', error);
+    alert('Connection error. Please try again.');
   }
 }
 
-const handleChainChanged = (newChainId) => {
-  newChainId = toHexChainId(newChainId);
-  currentChainId = newChainId;
+const handleDisconnect = () => {
+  isConnected = false;
+  currentAccount = null;
+  updateConnectionState({ isConnected: false });
   
-  if (newChainId !== HEMI_NETWORK.chainId) {
-    alert('Network changed! Please reconnect to Hemi Network.');
-    handleDisconnect();
+  // Удаляем обработчики событий
+  if (window.ethereum?.removeListener) {
+    window.ethereum.removeListener('accountsChanged', () => {});
   }
-  updateUI();
 };
 
-// Обновленная функция проверки сети при загрузке
+// Обновленная проверка при загрузке
 window.addEventListener('load', async () => {
-  if (typeof window.ethereum !== 'undefined') {
+  const state = loadConnectionState();
+  if (state.isConnected && typeof window.ethereum !== 'undefined') {
     try {
-      const [accounts, chainId] = await Promise.all([
-        window.ethereum.request({ method: 'eth_accounts' }),
-        window.ethereum.request({ method: 'eth_chainId' })
-      ]);
-      
-      currentChainId = toHexChainId(chainId);
-      if (accounts.length > 0 && currentChainId === HEMI_NETWORK.chainId) {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
         isConnected = true;
         currentAccount = accounts[0];
-        updateUI();
+        updateButtonState();
       }
     } catch (error) {
-      console.error('Initial connection check failed:', error);
       handleDisconnect();
     }
   }
 });
+
+function updateButtonState() {
+  const button = document.getElementById('connectButton');
+  if (isConnected && currentAccount) {
+    button.textContent = `Disconnect (${currentAccount.slice(0,6)}...${currentAccount.slice(-4)})`;
+    button.classList.remove('bg-white/90', 'text-orange-600');
+    button.classList.add('bg-red-600', 'text-white');
+  } else {
+    button.textContent = 'Connect Wallet';
+    button.classList.remove('bg-red-600', 'text-white');
+    button.classList.add('bg-white/90', 'text-orange-600');
+  }
+}
