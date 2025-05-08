@@ -115,9 +115,9 @@
         memeCard.innerHTML = `
           <img src="${meme.url}" alt="${meme.title}" class="meme-image mb-4" />
           <h3 class="text-xl font-semibold">${meme.title}</h3>
-          <p class="text-sm text-gray-600 mb-2">Автор: ${meme.author}</p>
-          <p class="font-bold mb-2">Голосов: ${meme.votes}</p>
-          <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600" data-id="${meme.id}">Голосовать</button>
+          <p class="text-sm text-gray-600 mb-2">Author: ${meme.author}</p>
+          <p class="font-bold mb-2">Votes: ${meme.votes}</p>
+          <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600" data-id="${meme.id}">Vote</button>
         `;
         votingGrid.appendChild(memeCard);
       });
@@ -125,7 +125,7 @@
       document.querySelectorAll('.vote-btn').forEach(button => {
         button.addEventListener('click', async (e) => {
           if (!walletConnected) {
-            alert('Пожалуйста, подключите кошелек!');
+            alert('Please connect your wallet first!');
             return;
           }
           const memeId = parseInt(e.target.dataset.id);
@@ -136,8 +136,8 @@
         });
       });
     } catch (error) {
-      console.error('Ошибка загрузки мемов:', error);
-      votingGrid.innerHTML = '<p class="text-red-500">Ошибка загрузки мемов. Попробуйте обновить страницу.</p>';
+      console.error('Error loading memes:', error);
+      votingGrid.innerHTML = '<p class="text-red-500">Failed to load memes. Please refresh the page.</p>';
     }
   }
 
@@ -165,7 +165,7 @@
   memeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!walletConnected) {
-      alert('Пожалуйста, подключите кошелек!');
+      alert('Please connect your wallet first!');
       return;
     }
     const discordName = document.getElementById('discordName').value.trim();
@@ -173,13 +173,13 @@
     const memeUrl = document.getElementById('memeUrl').value.trim();
 
     if (!discordName || !memeTitle || !memeUrl) {
-      alert('Пожалуйста, заполните все поля!');
+      alert('Please fill in all fields!');
       return;
     }
 
     const added = await addMeme(memeTitle);
     if (added) {
-      alert('Мем успешно добавлен!');
+      alert('Meme successfully added!');
       uploadModal.style.display = 'none';
       memeForm.reset();
       await renderMemes();
@@ -195,7 +195,7 @@
         await renderMemes();
       }
     } else {
-      votingGrid.innerHTML = '<p class="text-gray-500 text-center">Подключите кошелек, чтобы видеть голоса и голосовать.</p>';
+      votingGrid.innerHTML = '<p class="text-gray-500 text-center">Connect your wallet to see votes and vote.</p>';
     }
   });
 </script>
