@@ -39,21 +39,20 @@
       transition: all 0.3s ease;
     }
     #networkIndicator[data-status="connected"] {
-      background: #10B981 !important; /* Зеленый */
+      background: #10B981 !important;
       color: white !important;
     }
     #networkIndicator[data-status="error"] {
-      background: #EF4444 !important; /* Красный */
+      background: #EF4444 !important;
       color: white !important;
     }
     #networkIndicator[data-status="unknown"] {
-      background: #FBBF24 !important; /* Желтый или оранжевый */
+      background: #FBBF24 !important;
       color: black !important;
     }
   </style>
 </head>
 <body class="bg-gradient-to-b from-orange-50 to-orange-100 min-h-screen">
-  <!-- Header -->
   <header class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-xl">
     <div class="flex items-center gap-3">
       <img src="https://i.imgur.com/SyOVYBY.jpeg" class="h-12 w-12 rounded-full ring-2 ring-white/30 hover:ring-orange-200 transition-all" alt="HEMIMEME Logo" />
@@ -71,18 +70,14 @@
      </div>
   </header>
 
-  <!-- Main Content -->
   <main class="container mx-auto px-4 py-12">
-    <!-- Voting Section -->
     <section class="bg-white p-8 rounded-xl shadow-lg">
       <h2 class="text-2xl font-bold mb-6 text-center text-orange-600">Trending Memes</h2>
       <div id="votingGrid" class="flex flex-col gap-8">
-        <!-- Memes will be loaded here vertically -->
       </div>
     </section>
   </main>
 
-  <!-- Upload Modal -->
   <div class="upload-modal" id="uploadModal">
     <div class="bg-white p-6 rounded-xl w-96">
       <div class="flex justify-between items-center mb-4">
@@ -112,17 +107,15 @@
     </div>
   </div>
 
-  <!-- Скрипты -->
   <script type="module">
     import { connectWallet } from './connectButton.js';
 
-    // Инициализация переменных
     let isConnected = false;
     let currentAccount = null;
     let currentChainId = null;
 
     const HEMI_NETWORK = {
-      chainId: '0xA867', // 43111 в hex
+      chainId: '0xA867',
       chainName: 'Hemi Network',
       nativeCurrency: {
         name: 'ETH',
@@ -133,10 +126,8 @@
       blockExplorerUrls: ['https://explorer.hemi.xyz']
     };
 
-    // Обновление UI
     document.getElementById('connectButton').addEventListener('click', connectWallet);
 
-    // Варианты для мемов
     const memes = [
       {id: 1, title: 'Classic Doge', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
       {id: 2, title: 'Surprised Pikachu', votes: 2345, url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678'},
@@ -146,7 +137,6 @@
       {id: 6, title: 'Drake Reaction', votes: 3120, url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234'}
     ];
 
-    // Вызов функции рендера мемов
     function renderVotingMemes() {
       const votingGrid = document.getElementById('votingGrid');
       votingGrid.innerHTML = memes.map(meme => `
@@ -171,7 +161,6 @@
       `).join('');
     }
 
-    // Обработка голосования
     document.addEventListener('click', e => {
       if (e.target.classList.contains('vote-btn')) {
         const memeCard = e.target.closest('[data-id]');
@@ -189,7 +178,6 @@
       }
     });
 
-    // Модальное окно
     const modal = document.getElementById('uploadModal');
     const showModal = () => modal.style.display = 'flex';
     const hideModal = () => modal.style.display = 'none';
@@ -198,7 +186,6 @@
     document.getElementById('closeModal').addEventListener('click', hideModal);
     document.getElementById('cancelBtn').addEventListener('click', hideModal);
 
-    // Обработка формы
     document.getElementById('memeForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const newMeme = {
@@ -216,7 +203,6 @@
       }
     });
 
-    // Валидация мемов
     function validateMeme(meme) {
       const discordRegex = /^[^#]+#\d{4}$/;
       try {
@@ -232,7 +218,6 @@
       return true;
     }
 
-    // Обновление индикатора сети
     const updateNetworkIndicator = () => {
       const networkIndicator = document.getElementById('networkIndicator');
       if (!networkIndicator) return;
@@ -245,7 +230,6 @@
       }
     };
 
-    // Обработка смены сети
     const handleChainChanged = (newChainId) => {
       newChainId = toHexChainId(newChainId);
       currentChainId = newChainId;
@@ -256,7 +240,6 @@
       updateNetworkIndicator();
     };
 
-    // Проверка сети при загрузке
     window.addEventListener('load', async () => {
       if (typeof window.ethereum !== 'undefined') {
         try {
@@ -276,8 +259,6 @@
         }
       }
     });
-
-    // Остальной код для connectWallet и т.п. (подключение к кошельку) — в файле connectButton.js
   </script>
 </body>
 </html>
