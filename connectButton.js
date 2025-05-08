@@ -3,7 +3,7 @@ import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.es
 // Объявляем объект HEMI_NETWORK с правильным chainId в hex
 const HEMI_NETWORK = {
   chainId: '0xA867', // hex для 43111
-  chainName: 'Hemi Network',
+  chainName: 'Hemi',
   nativeCurrency: {
     name: 'ETH',
     symbol: 'ETH',
