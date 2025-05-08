@@ -5,7 +5,7 @@ const HEMI_NETWORK = {
   chainId: '0xA867', // hex для 43111
   chainName: 'Hemi Network',
   nativeCurrency: {
-    name: 'HEMI',
+    name: 'ETH',
     symbol: 'ETH',
     decimals: 18
   },
