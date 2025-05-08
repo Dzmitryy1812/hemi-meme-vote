@@ -94,40 +94,7 @@
   <script type="module">
     import { connectWallet } from './connectButton.js';
 
-    const HEMI_NETWORK = {
-      chainId: '0xA867',
-      chainName: 'Hemi',
-      nativeCurrency: {
-        name: 'ETH',
-        symbol: 'ETH',
-        decimals: 18
-      },
-      rpcUrls: ['https://rpc.hemi.network/rpc'],
-      blockExplorerUrls: ['https://explorer.hemi.xyz']
-    };
-
-    async function switchToHemiNetwork() {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: HEMI_NETWORK.chainId }],
-        });
-      } catch (error) {
-        if (error.code === 4902) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [HEMI_NETWORK],
-            });
-          } catch (addError) {
-            alert('Failed to add Hemi Network');
-            return;
-          }
-        }
-      }
-      await connectWallet();
-    }
-
+    // Массив мемов
     const memes = [
       {id: 1, title: 'Classic Doge', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
       {id: 2, title: 'Surprised Pikachu', votes: 2345, url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678'},
@@ -176,6 +143,7 @@
       }
     });
 
+    // Модальное окно
     const modal = document.getElementById('uploadModal');
     const showModal = () => modal.style.display = 'flex';
     const hideModal = () => modal.style.display = 'none';
@@ -220,7 +188,8 @@
       renderVotingMemes();
     });
 
-    document.getElementById('connectButton').addEventListener('click', switchToHemiNetwork);
+    // Подключение кошелька
+    document.getElementById('connectButton').addEventListener('click', connectWallet);
   </script>
 </body>
 </html>
