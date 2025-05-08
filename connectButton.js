@@ -26,7 +26,7 @@ const loadConnectionState = () => {
 
 export async function connectWallet() {
   if (typeof window.ethereum === 'undefined') {
-    // Optionally show a UI notification that MetaMask is required
+    // MetaMask not installed - no alert, just return
     return;
   }
 
@@ -54,10 +54,12 @@ export async function connectWallet() {
             });
           } catch (addError) {
             console.error('Failed to add Hemi network:', addError);
+            // no alert here
             return;
           }
         } else {
           console.error('Failed to switch network:', switchError);
+          // no alert here
           return;
         }
       }
@@ -81,6 +83,7 @@ export async function connectWallet() {
     });
   } catch (error) {
     console.error('Connection error:', error);
+    // no alert here
   }
 }
 
