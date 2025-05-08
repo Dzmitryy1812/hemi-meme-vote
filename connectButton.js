@@ -54,12 +54,10 @@ export async function connectWallet() {
             });
           } catch (addError) {
             console.error('Failed to add Hemi network:', addError);
-            // no alert here
             return;
           }
         } else {
           console.error('Failed to switch network:', switchError);
-          // no alert here
           return;
         }
       }
@@ -83,20 +81,15 @@ export async function connectWallet() {
     });
   } catch (error) {
     console.error('Connection error:', error);
-    // no alert here
   }
 }
 
-const handleDisconnect = () => {
+export function handleDisconnect() {
   isConnected = false;
   currentAccount = null;
   updateConnectionState({ isConnected: false });
   updateButtonState();
-
-  if (window.ethereum?.removeListener) {
-    window.ethereum.removeListener('accountsChanged', () => {});
-  }
-};
+}
 
 window.addEventListener('load', async () => {
   const state = loadConnectionState();
@@ -114,7 +107,7 @@ window.addEventListener('load', async () => {
   }
 });
 
-function updateButtonState() {
+export function updateButtonState() {
   const button = document.getElementById('connectButton');
   if (!button) return;
 
