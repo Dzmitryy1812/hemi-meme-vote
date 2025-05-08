@@ -25,7 +25,7 @@ export async function connectWallet() {
     updateButtonState();
     
   } catch (error) {
-    console.error('Connection error:', error); // Исправлено на английский
+    console.error('Connection error:', error);
     alert('Connection error. Please try again.');
   }
 }
@@ -34,16 +34,18 @@ function updateButtonState() {
   const button = document.getElementById('connectButton');
   
   if (isConnected && currentAccount) {
-    button.textContent = `Disconnect (${currentAccount.slice(0,6)}...${currentAccount.slice(-4)})`; // Исправлено
+    // Исправлено на английский
+    button.textContent = `Disconnect (${currentAccount.slice(0,6)}...${currentAccount.slice(-4)})`;
     button.classList.remove('bg-white/90', 'text-orange-600');
     button.classList.add('bg-red-600', 'text-white');
   } else {
-    button.textContent = 'Connect Wallet'; // Исправлено
+    button.textContent = 'Connect Wallet'; // Английский текст
     button.classList.remove('bg-red-600', 'text-white');
     button.classList.add('bg-white/90', 'text-orange-600');
   }
 }
 
+// Проверка подключения при загрузке (английские комментарии)
 window.addEventListener('load', async () => {
   if (typeof window.ethereum !== 'undefined') {
     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
