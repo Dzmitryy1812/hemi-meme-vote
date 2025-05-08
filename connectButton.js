@@ -2,8 +2,8 @@ const HEMI_NETWORK = {
   chainId: '0xA867', // Hex value for 43111
   chainName: 'Hemi Network',
   nativeCurrency: {
-    name: 'HEMI',
-    symbol: 'HEMI', // Исправлен символ с ETH на HEMI
+    name: 'ETH',
+    symbol: 'ETH', //
     decimals: 18
   },
   rpcUrls: ['https://rpc.hemi.network/rpc'],
