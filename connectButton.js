@@ -1,7 +1,7 @@
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
 const HEMI_NETWORK = {
-  chainId: '0xA867', // hex для 43111
+  chainId: '0xA867', // hex for 43111
   chainName: 'Hemi',
   nativeCurrency: {
     name: 'ETH',
@@ -26,7 +26,7 @@ const loadConnectionState = () => {
 
 export async function connectWallet() {
   if (typeof window.ethereum === 'undefined') {
-    alert('Please install MetaMask!');
+    // Optionally show a UI notification that MetaMask is required
     return;
   }
 
@@ -34,7 +34,6 @@ export async function connectWallet() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     let chainId = await provider.send('eth_chainId', []);
 
-    // Если не на нужной сети, пытаемся переключиться
     if (chainId !== HEMI_NETWORK.chainId) {
       try {
         await window.ethereum.request({
@@ -42,30 +41,28 @@ export async function connectWallet() {
           params: [{ chainId: HEMI_NETWORK.chainId }]
         });
       } catch (switchError) {
-        // Если сеть не добавлена, добавляем её и снова пытаемся переключиться
         if (switchError.code === 4902) {
           try {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
               params: [HEMI_NETWORK]
             });
-            // После добавления обязательно пробуем переключиться ещё раз!
+            await new Promise(res => setTimeout(res, 800));
             await window.ethereum.request({
               method: 'wallet_switchEthereumChain',
               params: [{ chainId: HEMI_NETWORK.chainId }]
             });
           } catch (addError) {
-            alert('Не удалось добавить сеть Hemi');
+            console.error('Failed to add Hemi network:', addError);
             return;
           }
         } else {
-          alert('Ошибка переключения сети');
+          console.error('Failed to switch network:', switchError);
           return;
         }
       }
     }
 
-    // Теперь мы точно на нужной сети, подключаем аккаунт
     await provider.send('eth_requestAccounts', []);
     const signer = provider.getSigner();
     currentAccount = await signer.getAddress();
@@ -84,8 +81,6 @@ export async function connectWallet() {
     });
   } catch (error) {
     console.error('Connection error:', error);
-    alert('Error: ' + (error && error.message ? error.message : JSON.stringify(error)));
-
   }
 }
 
