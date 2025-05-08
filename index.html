@@ -3,23 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HEMIMEME - URL Upload</title>
+  <title>HEMIMEME - Meme Platform</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .meme-container {
+    .meme-card {
       max-width: 800px;
       margin: 2rem auto;
       background: white;
       border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .meme-card:hover {
+      transform: translateY(-2px);
     }
     .meme-image {
       max-width: 100%;
-      max-height: 80vh;
+      max-height: 70vh;
       width: auto;
       height: auto;
       object-fit: contain;
+      border-radius: 8px 8px 0 0;
     }
     .upload-modal {
       background: rgba(0,0,0,0.5);
@@ -43,32 +48,30 @@
     </div>
     <div class="flex items-center gap-4">
       <button id="uploadButton" class="bg-orange-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-orange-600 transition-all">
-        <i class="fas fa-plus mr-2"></i> Add Meme
+        <i class="fas fa-plus mr-2"></i> Submit Meme
       </button>
       <button id="connectButton" class="bg-white/90 text-orange-600 px-6 py-3 rounded-full shadow-lg hover:bg-white hover:scale-105 transition-all">
-        <i class="fas fa-wallet mr-2"></i> Connect
+        <i class="fas fa-wallet mr-2"></i> Connect Wallet
       </button>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main class="container mx-auto px-4 py-12" id="memeGrid">
-    <!-- Memes will be loaded here -->
+  <main class="container mx-auto px-4 py-12">
+    <!-- Voting Section -->
+    <section class="bg-white p-8 rounded-xl shadow-lg">
+      <h2 class="text-2xl font-bold mb-6 text-center text-orange-600">Trending Memes</h2>
+      <div id="votingGrid" class="flex flex-col gap-8">
+        <!-- Memes will be loaded here vertically -->
+      </div>
+    </section>
   </main>
-
-  <!-- Voting Section -->
-  <section class="bg-white p-8 mt-10 rounded-xl shadow-lg">
-    <h2 class="text-2xl font-bold mb-6 text-center text-orange-600">Vote for Your Favorite Meme!</h2>
-    <div id="votingGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-      <!-- Voting items will be here -->
-    </div>
-  </section>
 
   <!-- Upload Modal -->
   <div class="upload-modal" id="uploadModal">
     <div class="bg-white p-6 rounded-xl w-96">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold">Add New Meme</h2>
+        <h2 class="text-2xl font-bold">Submit New Meme</h2>
         <button id="closeModal" class="text-orange-600 hover:text-orange-800">
           <i class="fas fa-times"></i>
         </button>
@@ -80,7 +83,7 @@
         </div>
         <div>
           <label class="block text-sm font-medium mb-2">Meme Title</label>
-          <input type="text" id="memeTitle" required class="w-full px-4 py-2 border rounded-lg">
+          <input type="text" id="memeTitle" required class="w-full px-4 py-2 border rounded-lg" placeholder="Enter meme title">
         </div>
         <div>
           <label class="block text-sm font-medium mb-2">Image URL</label>
@@ -88,63 +91,73 @@
         </div>
         <div class="flex justify-end gap-4">
           <button type="button" id="cancelBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">Add Meme</button>
+          <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">Submit</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Удалена старая реализация connectWallet -->
   <script type="module">
     import { connectWallet } from './connectButton.js';
     
-    // Инициализация обработчиков событий
+    // Initialize wallet connection
     document.getElementById('connectButton').addEventListener('click', connectWallet);
     
-    // Остальной код приложения
+    // Memes data
     const memes = [
-      {id: 1, title: 'Doge Classic', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
+      {id: 1, title: 'Classic Doge', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
       {id: 2, title: 'Surprised Pikachu', votes: 2345, url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678'},
       {id: 3, title: 'Success Kid', votes: 1789, url: 'https://dzmitryy1812.github.io/public/memes/3.jpg', author: 'kidlover#9012'},
       {id: 4, title: 'Distracted Boyfriend', votes: 2956, url: 'https://dzmitryy1812.github.io/public/memes/4.jpg', author: 'relshipmeme#3456'},
       {id: 5, title: 'Evil Kermit', votes: 1678, url: 'https://dzmitryy1812.github.io/public/memes/5.jpg', author: 'muppets#7890'},
-      {id: 6, title: 'Drake Hotline Bling', votes: 3120, url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234'}
+      {id: 6, title: 'Drake Reaction', votes: 3120, url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234'}
     ];
 
-    // Функция рендеринга мемов
+    // Render memes in vertical list
     function renderVotingMemes() {
       const votingGrid = document.getElementById('votingGrid');
       votingGrid.innerHTML = memes.map(meme => `
-        <div class="p-4 bg-white rounded-lg shadow-md text-center" data-id="${meme.id}">
-          <img src="${meme.url}" class="meme-image mx-auto mb-4" alt="${meme.title}" 
-               onerror="this.src='https://via.placeholder.com/800x600?text=Image+Error'">
-          <h3 class="font-bold text-lg text-orange-600">${meme.title}</h3>
-          <p class="text-sm text-gray-500 mb-2"><i class="fas fa-user mr-1"></i>${meme.author}</p>
-          <div class="flex justify-between items-center">
-            <span class="text-orange-500 font-medium"><i class="fas fa-heart mr-1"></i>${meme.votes}</span>
-            <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">Vote</button>
+        <div class="meme-card" data-id="${meme.id}">
+          <div class="p-6">
+            <img src="${meme.url}" class="meme-image mx-auto mb-4" alt="${meme.title}" 
+                 onerror="this.src='https://via.placeholder.com/800x600?text=Image+Failed+to+Load'">
+            <div class="space-y-3">
+              <h3 class="text-xl font-bold text-orange-600">${meme.title}</h3>
+              <p class="text-sm text-gray-500"><i class="fas fa-user mr-2"></i>Submitted by ${meme.author}</p>
+              <div class="flex justify-between items-center pt-4">
+                <span class="text-orange-500 font-medium">
+                  <i class="fas fa-heart mr-2"></i>${meme.votes} votes
+                </span>
+                <button class="vote-btn bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transform transition hover:scale-105">
+                  Vote Now
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       `).join('');
     }
 
-    // Обработчики событий
+    // Voting handler
     document.addEventListener('click', e => {
       if (e.target.classList.contains('vote-btn')) {
         const memeCard = e.target.closest('[data-id]');
         const memeId = parseInt(memeCard.dataset.id);
         const meme = memes.find(m => m.id === memeId);
+        
         if (meme) {
           meme.votes++;
           const voteCount = memeCard.querySelector('.text-orange-500');
-          voteCount.textContent = `${meme.votes}`;
-          e.target.classList.add('bg-orange-700');
-          setTimeout(() => e.target.classList.remove('bg-orange-700'), 200);
+          voteCount.innerHTML = `<i class="fas fa-heart mr-2"></i>${meme.votes} votes`;
+          e.target.classList.add('bg-orange-700', 'scale-100');
+          setTimeout(() => {
+            e.target.classList.remove('bg-orange-700', 'scale-100');
+          }, 200);
         }
       }
     });
 
-    // Работа с модальным окном
+    // Modal handling
     const modal = document.getElementById('uploadModal');
     const showModal = () => modal.style.display = 'flex';
     const hideModal = () => modal.style.display = 'none';
@@ -153,7 +166,44 @@
     document.getElementById('closeModal').addEventListener('click', hideModal);
     document.getElementById('cancelBtn').addEventListener('click', hideModal);
 
-    // Инициализация
+    // Form submission
+    document.getElementById('memeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const newMeme = {
+        id: memes.length + 1,
+        title: document.getElementById('memeTitle').value.trim(),
+        votes: 0,
+        url: document.getElementById('memeUrl').value.trim(),
+        author: document.getElementById('discordName').value.trim()
+      };
+
+      if (validateMeme(newMeme)) {
+        memes.unshift(newMeme); // Add to top
+        renderVotingMemes();
+        this.reset();
+        hideModal();
+      }
+    });
+
+    function validateMeme(meme) {
+      const discordRegex = /^[^#]+#\d{4}$/;
+      try {
+        new URL(meme.url);
+      } catch {
+        alert('Please enter a valid image URL');
+        return false;
+      }
+      
+      if (!discordRegex.test(meme.author)) {
+        alert('Invalid Discord format (username#1234)');
+        return false;
+      }
+      
+      return true;
+    }
+
+    // Initial render
     renderVotingMemes();
   </script>
 </body>
