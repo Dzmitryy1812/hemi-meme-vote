@@ -35,27 +35,13 @@
       align-items: center;
       z-index: 1000;
     }
-    #networkIndicator {
-      transition: all 0.3s ease;
-    }
-    #networkIndicator[data-status="connected"] {
-      background: #10B981 !important;
-      color: white !important;
-    }
-    #networkIndicator[data-status="error"] {
-      background: #EF4444 !important;
-      color: white !important;
-    }
-    #networkIndicator[data-status="unknown"] {
-      background: #FBBF24 !important;
-      color: black !important;
-    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-orange-50 to-orange-100 min-h-screen">
+  <!-- Header -->
   <header class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-xl">
     <div class="flex items-center gap-3">
-      <img src="https://i.imgur.com/SyOVYBY.jpeg" class="h-12 w-12 rounded-full ring-2 ring-white/30 hover:ring-orange-200 transition-all" alt="HEMIMEME Logo" />
+      <img src="https://i.imgur.com/SyOVYBY.jpeg" class="h-12 w-12 rounded-full ring-2 ring-white/30 hover:ring-orange-200 transition-all" alt="HEMIMEME Logo">
       <h1 class="text-3xl font-bold font-mono">
         <i class="fas fa-fire mr-2"></i>HEMIMEME
       </h1>
@@ -67,16 +53,21 @@
       <button id="connectButton" class="bg-white/90 text-orange-600 px-6 py-3 rounded-full shadow-lg hover:bg-white hover:scale-105 transition-all">
         <i class="fas fa-wallet mr-2"></i> Connect Wallet
       </button>
-     </div>
+    </div>
   </header>
 
+  <!-- Main Content -->
   <main class="container mx-auto px-4 py-12">
+    <!-- Voting Section -->
     <section class="bg-white p-8 rounded-xl shadow-lg">
       <h2 class="text-2xl font-bold mb-6 text-center text-orange-600">Trending Memes</h2>
-      <div id="votingGrid" class="flex flex-col gap-8"></div>
+      <div id="votingGrid" class="flex flex-col gap-8">
+        <!-- Memes will be loaded here vertically -->
+      </div>
     </section>
   </main>
 
+  <!-- Upload Modal -->
   <div class="upload-modal" id="uploadModal">
     <div class="bg-white p-6 rounded-xl w-96">
       <div class="flex justify-between items-center mb-4">
@@ -108,25 +99,11 @@
 
   <script type="module">
     import { connectWallet } from './connectButton.js';
-
-    let isConnected = false;
-    let currentAccount = null;
-    let currentChainId = null;
-
-    const HEMI_NETWORK = {
-      chainId: '0xA867',
-      chainName: 'Hemi Network',
-      nativeCurrency: {
-        name: 'ETH',
-        symbol: 'ETH',
-        decimals: 18
-      },
-      rpcUrls: ['https://rpc.hemi.network/rpc'],
-      blockExplorerUrls: ['https://explorer.hemi.xyz']
-    };
-
+    
+    // Initialize wallet connection
     document.getElementById('connectButton').addEventListener('click', connectWallet);
-
+    
+    // Memes data
     const memes = [
       {id: 1, title: 'Classic Doge', votes: 1520, url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234'},
       {id: 2, title: 'Surprised Pikachu', votes: 2345, url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678'},
@@ -136,6 +113,7 @@
       {id: 6, title: 'Drake Reaction', votes: 3120, url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234'}
     ];
 
+    // Render memes in vertical list
     function renderVotingMemes() {
       const votingGrid = document.getElementById('votingGrid');
       votingGrid.innerHTML = memes.map(meme => `
@@ -160,11 +138,13 @@
       `).join('');
     }
 
+    // Voting handler
     document.addEventListener('click', e => {
       if (e.target.classList.contains('vote-btn')) {
         const memeCard = e.target.closest('[data-id]');
         const memeId = parseInt(memeCard.dataset.id);
         const meme = memes.find(m => m.id === memeId);
+        
         if (meme) {
           meme.votes++;
           const voteCount = memeCard.querySelector('.text-orange-500');
@@ -177,6 +157,7 @@
       }
     });
 
+    // Modal handling
     const modal = document.getElementById('uploadModal');
     const showModal = () => modal.style.display = 'flex';
     const hideModal = () => modal.style.display = 'none';
@@ -185,8 +166,10 @@
     document.getElementById('closeModal').addEventListener('click', hideModal);
     document.getElementById('cancelBtn').addEventListener('click', hideModal);
 
+    // Form submission
     document.getElementById('memeForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      
       const newMeme = {
         id: memes.length + 1,
         title: document.getElementById('memeTitle').value.trim(),
@@ -194,8 +177,9 @@
         url: document.getElementById('memeUrl').value.trim(),
         author: document.getElementById('discordName').value.trim()
       };
+
       if (validateMeme(newMeme)) {
-        memes.unshift(newMeme);
+        memes.unshift(newMeme); // Add to top
         renderVotingMemes();
         this.reset();
         hideModal();
@@ -210,54 +194,17 @@
         alert('Please enter a valid image URL');
         return false;
       }
+      
       if (!discordRegex.test(meme.author)) {
         alert('Invalid Discord format (username#1234)');
         return false;
       }
+      
       return true;
     }
 
-    const updateNetworkIndicator = () => {
-      const networkIndicator = document.getElementById('networkIndicator');
-      if (!networkIndicator) return;
-      if (currentChainId && currentChainId.toLowerCase() === HEMI_NETWORK.chainId.toLowerCase()) {
-        networkIndicator.textContent = 'Connected to Hemi Network';
-        networkIndicator.setAttribute('data-status', 'connected');
-      } else {
-        networkIndicator.textContent = 'Wrong Network';
-        networkIndicator.setAttribute('data-status', 'error');
-      }
-    };
-
-    const handleChainChanged = (newChainId) => {
-      newChainId = toHexChainId(newChainId);
-      currentChainId = newChainId;
-      if (newChainId !== HEMI_NETWORK.chainId) {
-        alert('Network changed! Please reconnect to Hemi Network.');
-        handleDisconnect();
-      }
-      updateNetworkIndicator();
-    };
-
-    window.addEventListener('load', async () => {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          const [accounts, chainId] = await Promise.all([
-            window.ethereum.request({ method: 'eth_accounts' }),
-            window.ethereum.request({ method: 'eth_chainId' })
-          ]);
-          currentChainId = toHexChainId(chainId);
-          if (accounts.length > 0 && currentChainId === HEMI_NETWORK.chainId) {
-            isConnected = true;
-            currentAccount = accounts[0];
-          }
-          updateNetworkIndicator();
-        } catch (error) {
-          console.error('Initial connection check failed:', error);
-          handleDisconnect();
-        }
-      }
-    });
+    // Initial render
+    renderVotingMemes();
   </script>
 </body>
 </html>
