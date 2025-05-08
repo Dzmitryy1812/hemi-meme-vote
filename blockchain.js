@@ -1,8 +1,10 @@
 // blockchain.js
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
+// Адрес и ABI контракта
 const contractAddress = '0x04cAEc2fA8Cf5b0D1AC71B61A12917456d2f27BC';
 const contractABI = [
+  // ...тот же ABI, что и у вас
   {
     "inputs": [
       {
@@ -192,6 +194,16 @@ const contractABI = [
   }
 ];
 
+// Статический массив мемов на фронтенде
+const staticMemes = [
+  { id: 0, title: 'Classic Doge', url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234' },
+  { id: 1, title: 'Surprised Pikachu', url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678' },
+  { id: 2, title: 'Success Kid', url: 'https://dzmitryy1812.github.io/public/memes/3.jpg', author: 'kidlover#9012' },
+  { id: 3, title: 'Distracted Boyfriend', url: 'https://dzmitryy1812.github.io/public/memes/4.jpg', author: 'relshipmeme#3456' },
+  { id: 4, title: 'Evil Kermit', url: 'https://dzmitryy1812.github.io/public/memes/5.jpg', author: 'muppets#7890' },
+  { id: 5, title: 'Drake Reaction', url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234' }
+];
+
 let provider;
 let signer;
 let contract;
@@ -210,21 +222,24 @@ export async function connectWallet() {
   return true;
 }
 
-// Загрузка мемов
+// Обновлённая функция загрузки мемов - берём данные из массива и добавляем голоса из контракта
 export async function loadMemes() {
-  const count = (await contract.memeCount()).toNumber();
-  const memes = [];
+  const memesWithVotes = [];
 
-  for (let i = 0; i < count; i++) {
-    const meme = await contract.memes(i);
-    memes.push({
-      id: i,
-      name: meme.name,
-      votes: meme.votes.toNumber()
+  for (const meme of staticMemes) {
+    let votes = 0;
+    try {
+      votes = (await contract.getVotes(meme.id)).toNumber();
+    } catch (error) {
+      console.warn(`Не удалось получить голоса для мема ID ${meme.id}:`, error);
+    }
+    memesWithVotes.push({
+      ...meme,
+      votes
     });
   }
 
-  return memes;
+  return memesWithVotes;
 }
 
 // Голосование за мем
@@ -247,7 +262,7 @@ export async function voteMeme(memeId) {
   }
 }
 
-// Добавление нового мема
+// Добавление нового мема (если нужно)
 export async function addMeme(name) {
   try {
     const tx = await contract.addMeme(name);
