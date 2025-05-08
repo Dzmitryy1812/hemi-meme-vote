@@ -36,43 +36,56 @@ The smart contract enables users to upload memes, vote for them, and track votes
   
 ### Contract Overview
 
-```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract HemiMeme {
-    string public name = "Hemi Meme Voting";
+contract MemeVoting {
+    address public owner;
     uint256 public memeCount = 0;
 
     struct Meme {
-        uint id;
-        string url;
-        uint votes;
-        address uploader;
+        string cid; // CID картинки из IPFS
+        uint256 votes;
     }
 
-    mapping(uint => Meme) public memes;
+    mapping(uint256 => Meme) public memes;
+    mapping(address => mapping(uint256 => bool)) public hasVoted; // голосовавшие
 
-    event MemeUploaded(uint id, string url, address uploader);
-    event MemeVoted(uint id, uint votes);
+    event MemeAdded(uint256 memeId, string cid);
+    event Voted(uint256 memeId, address voter);
 
-    function uploadMeme(string memory _url) public {
-        require(bytes(_url).length > 0, "URL cannot be empty");
+    constructor() {
+        owner = msg.sender;
+    }
 
+    function addMeme(string memory _cid) public returns (uint256) {
+        require(msg.sender == owner, "Only owner can add memes");
+
+        memes[memeCount] = Meme({
+            cid: _cid,
+            votes: 0
+        });
+
+        emit MemeAdded(memeCount, _cid);
         memeCount++;
-        memes[memeCount] = Meme(memeCount, _url, 0, msg.sender);
-        emit MemeUploaded(memeCount, _url, msg.sender);
+        return memeCount - 1;
     }
 
-    function voteMeme(uint _id) public {
-        require(_id > 0 && _id <= memeCount, "Invalid meme ID");
+    function vote(uint256 _memeId) public {
+        require(!hasVoted[msg.sender][_memeId], "Already voted for this meme");
+        require(_memeId < memeCount, "Meme does not exist");
 
-        memes[_id].votes++;
-        emit MemeVoted(_id, memes[_id].votes);
+        memes[_memeId].votes += 1;
+        hasVoted[msg.sender][_memeId] = true;
+
+        emit Voted(_memeId, msg.sender);
     }
 
-    function getMeme(uint _id) public view returns (uint, string memory, uint, address) {
-        Meme memory m = memes[_id];
-        return (m.id, m.url, m.votes, m.uploader);
+    function getVotes(uint256 _memeId) public view returns (uint256) {
+        return memes[_memeId].votes;
+    }
+
+    function getCid(uint256 _memeId) public view returns (string memory) {
+        return memes[_memeId].cid;
     }
 }
