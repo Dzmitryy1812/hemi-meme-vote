@@ -1,37 +1,42 @@
-let connected = false;
+// connectButton.js
+import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js";
 
-// Функция для подключения кошелька
+let provider;
+let signer;
+
 export async function connectWallet() {
-  const btn = document.getElementById('connectButton');
+  const button = document.getElementById('connectButton');
 
-  if (typeof window.ethereum === 'undefined') {
-    alert('MetaMask not found. Please install MetaMask!');
+  if (!window.ethereum) {
+    alert("MetaMask not detected!");
     return;
   }
 
-  try {
-    if (!connected) {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      connected = true;
+  if (!signer) {
+    try {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      const address = await signer.getAddress();
+      console.log("Connected wallet:", address);
 
-      // Обновление текста и класса кнопки
-      btn.innerHTML = `
-        <i class="fas fa-check-circle mr-2"></i>${accounts[0].slice(0,6)}...${accounts[0].slice(-4)}
-        <i class="fas fa-sign-out-alt ml-2"></i> Disconnect
-      `;
-      btn.classList.add('bg-green-100', 'text-green-700');
-      btn.classList.remove('bg-white/90', 'text-orange-600');
-    } else {
-      connected = false;
-
-      // Отключение
-      btn.innerHTML = `
-        <i class="fas fa-wallet mr-2"></i> Connect
-      `;
-      btn.classList.remove('bg-green-100', 'text-green-700');
-      btn.classList.add('bg-white/90', 'text-orange-600');
+      button.innerHTML = `<i class="fas fa-unlink mr-2"></i> Disconnect`;
+      button.classList.remove('bg-white/90', 'text-orange-600');
+      button.classList.add('bg-red-100', 'text-red-600');
+      button.onclick = disconnectWallet;
+    } catch (err) {
+      console.error("User rejected connection:", err);
     }
-  } catch (err) {
-    alert('Connection failed: ' + err.message);
   }
+}
+
+function disconnectWallet() {
+  const button = document.getElementById('connectButton');
+  provider = null;
+  signer = null;
+  button.innerHTML = `<i class="fas fa-wallet mr-2"></i> Connect`;
+  button.classList.remove('bg-red-100', 'text-red-600');
+  button.classList.add('bg-white/90', 'text-orange-600');
+  button.onclick = connectWallet;
+  console.log('Wallet disconnected');
 }
