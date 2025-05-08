@@ -1,8 +1,7 @@
-// connectButton.js
 import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js";
 
-let provider;
-let signer;
+let provider = null;
+let signer = null;
 
 export async function connectWallet() {
   const button = document.getElementById('connectButton');
@@ -25,7 +24,7 @@ export async function connectWallet() {
       button.classList.add('bg-red-100', 'text-red-600');
       button.onclick = disconnectWallet;
     } catch (err) {
-      console.error("User rejected connection:", err);
+      console.error("Connection error:", err);
     }
   }
 }
@@ -34,9 +33,11 @@ function disconnectWallet() {
   const button = document.getElementById('connectButton');
   provider = null;
   signer = null;
+
   button.innerHTML = `<i class="fas fa-wallet mr-2"></i> Connect`;
   button.classList.remove('bg-red-100', 'text-red-600');
   button.classList.add('bg-white/90', 'text-orange-600');
   button.onclick = connectWallet;
-  console.log('Wallet disconnected');
+
+  console.log('Disconnected wallet');
 }
