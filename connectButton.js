@@ -6,7 +6,7 @@ let currentAccount = null;
 
 export async function connectWallet() {
   if (typeof window.ethereum === 'undefined') {
-    alert('Пожалуйста, установите MetaMask!');
+    alert('Please, Install MetaMask!');
     return;
   }
 
@@ -29,7 +29,7 @@ export async function connectWallet() {
     
   } catch (error) {
     console.error('Ошибка подключения:', error);
-    alert('Произошла ошибка при подключении кошелька');
+    alert('An error occurred while connecting the wallet');
   }
 }
 
@@ -37,11 +37,11 @@ function updateButtonState() {
   const button = document.getElementById('connectButton');
   
   if (isConnected && currentAccount) {
-    button.textContent = `Отключить (${currentAccount.slice(0,6)}...${currentAccount.slice(-4)})`;
+    button.textContent = `Disable (${currentAccount.slice(0,6)}...${currentAccount.slice(-4)})`;
     button.classList.remove('bg-white/90', 'text-orange-600');
     button.classList.add('bg-red-600', 'text-white');
   } else {
-    button.textContent = 'Подключить кошелёк';
+    button.textContent = 'Connect wallet';
     button.classList.remove('bg-red-600', 'text-white');
     button.classList.add('bg-white/90', 'text-orange-600');
   }
