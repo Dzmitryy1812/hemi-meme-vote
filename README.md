@@ -6,7 +6,7 @@ This project is a decentralized meme voting platform powered by the **Hemi Virtu
 
 - **Meme Upload**: Users can upload their memes through the website by providing a URL. These memes are stored and made available for voting.
 - **Voting System**: Users can vote on the memes displayed on the site. The voting process is recorded on the blockchain, ensuring fairness and transparency.
-- **Blockchain Integration (HVM)**: All meme-related data, such as votes and meme URLs, are stored and processed on the **Hemi Virtual Machine (HVM)**, making the system scalable and decentralized.
+- **Blockchain Integration **: All meme-related data, such as votes and meme URLs, are stored and processed on the **Hemi Virtual Machine (HVM)**, making the system scalable and decentralized.
 - **Decentralized & Transparent**: All votes are stored on the blockchain, so users can verify results and ensure that no votes are tampered with.
 - **Frontend Interface**: A user-friendly frontend (web interface) allows users to easily view, upload, and vote on memes.
 
