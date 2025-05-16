@@ -2,7 +2,7 @@
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
 // Адрес и ABI контракта
-const contractAddress = '0x04cAEc2fA8Cf5b0D1AC71B61A12917456d2f27BC';
+const contractAddress = '0x715045cea81d1DcC604b6A379B94D6049CDaa5a0';
 const contractABI = [
   {
     "inputs": [{ "internalType": "string", "name": "_name", "type": "string" }],
