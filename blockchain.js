@@ -42,11 +42,23 @@ export async function loadMemes() {
   }
   try {
     const memeCount = await contract.memeCount();
+    console.log('memeCount:', memeCount.toNumber());
     const memes = [];
     for (let i = 0; i < memeCount; i++) {
-      const name = await contract.getName(i);
-      const votes = await contract.getVotes(i);
-      memes.push({ id: i, title: name, votes: votes.toNumber() });
+      try {
+        const name = await contract.getName(i);
+        const votes = await contract.getVotes(i);
+        console.log(`Мем ID ${i}: name=${name}, votes=${votes.toNumber()}`);
+        memes.push({ id: i, title: name, votes: votes.toNumber() });
+      } catch (error) {
+        console.error(`Ошибка загрузки мема ID ${i}:`, error);
+        // Пропускаем проблемный мем, чтобы продолжить загрузку остальных
+        continue;
+      }
+    }
+    if (memes.length === 0 && memeCount.toNumber() > 0) {
+      console.warn('Не удалось загрузить ни одного мема');
+      window.Swal.fire('Предупреждение', 'Не удалось загрузить мемы. Проверьте контракт или сеть.', 'warning');
     }
     return memes;
   } catch (error) {
