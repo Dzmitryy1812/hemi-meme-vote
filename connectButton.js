@@ -1,5 +1,3 @@
-import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.mjs';
-
 const { ethers } = window;
 
 export const HEMI_NETWORK = {
@@ -30,7 +28,7 @@ export async function connectWallet() {
   console.log('Starting connectWallet, window.ethereum:', typeof window.ethereum);
   if (typeof window.ethereum === 'undefined') {
     console.error('MetaMask is not detected');
-    Swal.fire('Ошибка', 'Пожалуйста, установите и активируйте MetaMask!', 'error');
+    window.Swal.fire('Ошибка', 'Пожалуйста, установите и активируйте MetaMask!', 'error');
     return false;
   }
 
@@ -61,12 +59,12 @@ export async function connectWallet() {
             });
           } catch (addError) {
             console.error('Failed to add Hemi network:', addError);
-            Swal.fire('Ошибка', 'Не удалось добавить сеть Hemi: ' + addError.message, 'error');
+            window.Swal.fire('Ошибка', 'Не удалось добавить сеть Hemi: ' + addError.message, 'error');
             return false;
           }
         } else {
           console.error('Failed to switch network:', switchError);
-          Swal.fire('Ошибка', 'Не удалось переключить сеть: ' + switchError.message, 'error');
+          window.Swal.fire('Ошибка', 'Не удалось переключить сеть: ' + switchError.message, 'error');
           return false;
         }
       }
@@ -95,7 +93,7 @@ export async function connectWallet() {
     return true;
   } catch (error) {
     console.error('Connection error:', error);
-    Swal.fire('Ошибка', 'Ошибка подключения: ' + error.message, 'error');
+    window.Swal.fire('Ошибка', 'Ошибка подключения: ' + error.message, 'error');
     return false;
   }
 }
