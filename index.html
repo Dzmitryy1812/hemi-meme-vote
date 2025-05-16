@@ -82,4 +82,181 @@
       </div>
       <div>
         <label class="block text-sm font-medium mb-2">Image URL</label>
-        <input type="url" id="memeUrl" required class="w-full px-4 py
+        <input type="url" id="memeUrl" required class="w-full px-4 py-2 border rounded-lg" placeholder="https://example.com/meme.jpg" />
+      </div>
+      <div class="flex justify-end gap-4">
+        <button type="button" id="cancelBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">Submit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { connectWallet, loadMemes, voteMeme, addMeme, getContract } from './blockchain.js';
+
+  const connectButton = document.getElementById('connectButton');
+  const votingGrid = document.getElementById('votingGrid');
+  const uploadButton = document.getElementById('uploadButton');
+  const uploadModal = document.getElementById('uploadModal');
+  const closeModalBtn = document.getElementById('closeModal');
+  const memeForm = document.getElementById('memeForm');
+  const cancelBtn = document.getElementById('cancelBtn');
+
+  let walletConnected = false;
+  let memeMetadata = JSON.parse(localStorage.getItem('memeMetadata')) || [];
+
+  async function renderMemes() {
+    votingGrid.innerHTML = '';
+    try {
+      console.log('Загрузка мемов из контракта...');
+      const contractMemes = await loadMemes();
+      console.log('Мемы из контракта:', contractMemes);
+
+      const localMemes = contractMemes.map(meme => {
+        const metadata = memeMetadata.find(m => m.id === meme.id) || {};
+        return {
+          id: meme.id,
+          title: meme.title,
+          url: metadata.url || 'https://via.placeholder.com/300x200?text=Meme+Image',
+          author: metadata.author || `user${meme.id + 1}#${1000 + meme.id}`,
+          votes: meme.votes
+        };
+      });
+      console.log('Обновленный локальный массив мемов:', localMemes);
+
+      if (localMemes.length === 0) {
+        votingGrid.innerHTML = '<p class="text-gray-500 text-center">No memes available. Add a meme to get started!</p>';
+        return;
+      }
+
+      localMemes.forEach(meme => {
+        const memeCard = document.createElement('div');
+        memeCard.className = 'meme-card p-4 shadow rounded-lg';
+        memeCard.innerHTML = `
+          <img src="${meme.url}" alt="${meme.title}" class="meme-image mb-4" onerror="this.src='https://via.placeholder.com/300x200?text=Meme+Not+Found'" />
+          <h3 class="text-xl font-semibold">${meme.title}</h3>
+          <p class="text-sm text-gray-600 mb-2">Author: ${meme.author}</p>
+          <p class="font-bold mb-2">Votes: ${meme.votes}</p>
+          <button class="vote-btn bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600" data-id="${meme.id}">Vote</button>
+        `;
+        votingGrid.appendChild(memeCard);
+      });
+
+      document.querySelectorAll('.vote-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+          if (!walletConnected || !getContract()) {
+            alert('Please connect your wallet first!');
+            return;
+          }
+          const memeId = parseInt(e.target.dataset.id);
+          console.log('Голосование за мем ID:', memeId);
+          const success = await voteMeme(memeId);
+          if (success) {
+            console.log('Голосование успешно, обновляем мемы...');
+            await renderMemes();
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Ошибка загрузки мемов:', error);
+      votingGrid.innerHTML = `
+        <p class="text-red-500">Failed to load memes: ${error.message}</p>
+        <button id="retryBtn" class="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">Retry</button>
+      `;
+      document.getElementById('retryBtn')?.addEventListener('click', renderMemes);
+    }
+  }
+
+  connectButton.addEventListener('click', async () => {
+    try {
+      walletConnected = await connectWallet();
+      if (walletConnected && getContract()) {
+        connectButton.textContent = 'Wallet Connected';
+        connectButton.disabled = true;
+        await renderMemes();
+      } else {
+        throw new Error('Failed to initialize contract');
+      }
+    } catch (error) {
+      console.error('Ошибка подключения кошелька:', error);
+      walletConnected = false;
+      alert('Failed to connect wallet: ' + error.message);
+    }
+  });
+
+  uploadButton.addEventListener('click', () => {
+    uploadModal.style.display = 'flex';
+  });
+
+  closeModalBtn.addEventListener('click', () => {
+    uploadModal.style.display = 'none';
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    uploadModal.style.display = 'none';
+  });
+
+  memeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!walletConnected || !getContract()) {
+      alert('Please connect your wallet first!');
+      return;
+    }
+    const discordName = document.getElementById('discordName').value.trim();
+    const memeTitle = document.getElementById('memeTitle').value.trim();
+    const memeUrl = document.getElementById('memeUrl').value.trim();
+
+    if (!discordName || !memeTitle || !memeUrl) {
+      alert('Please fill in all fields!');
+      return;
+    }
+
+    try {
+      console.log('Добавление мема:', memeTitle);
+      const added = await addMeme(memeTitle);
+      if (added) {
+        const currentContract = getContract();
+        const memeCount = (await currentContract.memeCount()).toNumber();
+        const newId = memeCount - 1;
+        console.log('Новый мем добавлен с ID:', newId);
+
+        memeMetadata.push({
+          id: newId,
+          url: memeUrl,
+          author: discordName
+        });
+        localStorage.setItem('memeMetadata', JSON.stringify(memeMetadata));
+
+        alert('Meme successfully added!');
+        uploadModal.style.display = 'none';
+        memeForm.reset();
+        await renderMemes();
+      }
+    } catch (error) {
+      console.error('Ошибка добавления мема:', error);
+      alert('Failed to add meme: ' + error.message);
+    }
+  });
+
+  window.addEventListener('load', async () => {
+    try {
+      if (window.ethereum && window.ethereum.selectedAddress) {
+        walletConnected = await connectWallet();
+        if (walletConnected && getContract()) {
+          connectButton.textContent = 'Wallet Connected';
+          connectButton.disabled = true;
+          await renderMemes();
+        }
+      } else {
+        votingGrid.innerHTML = '<p class="text-gray-500 text-center">Connect your wallet to see votes and vote.</p>';
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке страницы:', error);
+      votingGrid.innerHTML = '<p class="text-red-500">Error loading page: ' + error.message + '</p>';
+    }
+  });
+</script>
+
+</body>
+</html>
