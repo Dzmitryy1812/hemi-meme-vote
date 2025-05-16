@@ -1,22 +1,25 @@
 import { contractAddress, contractABI } from './contractConfig.js';
 import { connectWallet, HEMI_NETWORK } from './connectButton.js';
 
-const { ethers } = window;
-
 let provider;
 let signer;
 let contract = null;
 
 export async function initializeContract() {
   console.log('Initializing contract');
+  if (typeof window.ethers === 'undefined') {
+    console.error('ethers is not loaded');
+    window.Swal.fire('Ошибка', 'Библиотека ethers не загружена. Проверьте подключение к интернету или загрузите локальную копию.', 'error');
+    return false;
+  }
   try {
     if (!(await connectWallet())) {
       console.error('Wallet connection failed');
       return false;
     }
-    provider = new ethers.providers.Web3Provider(window.ethereum);
+    provider = new window.ethers.providers.Web3Provider(window.ethereum);
     signer = provider.getSigner();
-    contract = new ethers.Contract(contractAddress, contractABI, signer);
+    contract = new window.ethers.Contract(contractAddress, contractABI, signer);
     const code = await provider.getCode(contractAddress);
     if (code === '0x') {
       console.error('Contract not found at address:', contractAddress);
