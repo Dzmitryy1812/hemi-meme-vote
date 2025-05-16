@@ -92,20 +92,26 @@ const contractABI = [
 
 let provider;
 let signer;
-let contract;
+export let contract = null; // Экспортируем contract для проверки
 
 // Подключение кошелька
 export async function connectWallet() {
-  if (!window.ethereum) {
-    alert('Пожалуйста, установите MetaMask!');
+  try {
+    if (!window.ethereum) {
+      alert('Пожалуйста, установите MetaMask!');
+      return false;
+    }
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send('eth_requestAccounts', []);
+    signer = provider.getSigner();
+    contract = new ethers.Contract(contractAddress, contractABI, signer);
+    console.log('Подключен к контракту:', contract.address, 'Сеть:', await provider.getNetwork());
+    return true;
+  } catch (error) {
+    console.error('Ошибка подключения кошелька:', error);
+    contract = null; // Сбрасываем contract при ошибке
     return false;
   }
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send('eth_requestAccounts', []);
-  signer = provider.getSigner();
-  contract = new ethers.Contract(contractAddress, contractABI, signer);
-  console.log('Подключен к контракту:', contract.address, 'Сеть:', await provider.getNetwork());
-  return true;
 }
 
 // Загрузка мемов с голосами из контракта
@@ -178,7 +184,6 @@ export async function addMeme(name) {
     return true;
   } catch (error) {
     console.error('Ошибка при добавлении мема:', error);
-    alert('Ошибка при добавлении мема: ' + error.message);
-    return false;
+    throw error; // Пробрасываем ошибку дальше
   }
 }
