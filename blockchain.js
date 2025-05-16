@@ -106,14 +106,20 @@ export async function connectWallet() {
     signer = provider.getSigner();
     contract = new ethers.Contract(contractAddress, contractABI, signer);
     const network = await provider.getNetwork();
-    console.log('Подключен к контракту:', contract.address, 'Сеть:', network, 'chainId:', network.chainId);
-    // Попробуем вызвать memeCount для проверки
+    console.log('Подключен к контракту:', contract.address, 'Сеть:', network.name, 'chainId:', network.chainId);
+    // Проверка доступности контракта
+    const code = await provider.getCode(contractAddress);
+    console.log('Код контракта:', code);
+    if (code === '0x') {
+      console.error('Контракт не существует по указанному адресу');
+      throw new Error('Контракт не существует по адресу ' + contractAddress);
+    }
     try {
       const memeCount = await contract.memeCount();
       console.log('memeCount из контракта:', memeCount.toNumber());
     } catch (error) {
-      console.error('Ошибка при вызове memeCount:', error);
-      throw new Error('Контракт не соответствует ABI или недоступен в этой сети');
+      console.error('Ошибка проверки memeCount:', error);
+      throw new Error('Контракт не соответствует ABI: ' + error.message);
     }
     return true;
   } catch (error) {
@@ -167,7 +173,6 @@ export async function voteMeme(memeId) {
       alert('Мем с таким ID не существует.');
       return false;
     }
-    console.log('Проверка hasVoted для memeId:', memeId);
     const voted = await currentContract.hasVoted(userAddress, memeId);
     console.log('hasVoted результат:', voted);
     if (voted) {
