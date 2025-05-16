@@ -1,5 +1,3 @@
-const { ethers } = window;
-
 export const HEMI_NETWORK = {
   chainId: '0xA867', // hex for 43111
   chainName: 'Hemi',
@@ -32,8 +30,14 @@ export async function connectWallet() {
     return false;
   }
 
+  if (typeof window.ethers === 'undefined') {
+    console.error('ethers is not loaded');
+    window.Swal.fire('Ошибка', 'Библиотека ethers не загружена. Проверьте подключение к интернету или загрузите локальную копию.', 'error');
+    return false;
+  }
+
   try {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const provider = new window.ethers.providers.Web3Provider(window.ethereum);
     let chainId = await provider.send('eth_chainId', []);
     console.log('Current chainId:', chainId);
 
