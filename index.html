@@ -6,15 +6,24 @@
   <title>HEMIMEME</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.mjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <script>
+    // Подавляем предупреждение Tailwind CSS
+    tailwind.config = {};
+    // Проверяем доступность библиотек
+    console.log('ethers available:', typeof window.ethers);
+    console.log('Swal available:', typeof window.Swal);
+    console.log('window.ethereum available:', typeof window.ethereum);
+  </script>
   <script type="module">
     import { connectWallet, handleDisconnect } from './connectButton.js';
     import { initializeContract, loadMemes, voteMeme, addMeme } from './blockchain.js';
 
-    console.log('Script loaded, window.ethereum:', typeof window.ethereum);
+    console.log('Script module loaded');
 
     document.getElementById('connectButton').addEventListener('click', async () => {
       console.log('Connect Wallet button clicked');
+      alert('Button clicked!'); // Временная проверка клика
       if (document.getElementById('connectButton').textContent.includes('Disconnect')) {
         handleDisconnect();
       } else {
