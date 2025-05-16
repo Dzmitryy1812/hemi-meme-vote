@@ -1,157 +1,130 @@
-import { contractAddress, contractABI } from './contractConfig.js';
-import { connectWallet, HEMI_NETWORK } from './connectButton.js';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HEMIMEME</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <script>
+    tailwind.config = {}; // Подавляем предупреждение Tailwind
+    console.log('ethers available:', typeof window.ethers);
+    console.log('Swal available:', typeof window.Swal);
+    console.log('window.ethereum available:', typeof window.ethereum);
+  </script>
+  <script type="module">
+    import { connectWallet, handleDisconnect } from './connectButton.js';
+    import { initializeContract, loadMemes, voteMeme, addMeme } from './blockchain.js';
 
-const { ethers } = window;
+    console.log('Script module loaded');
 
-let provider;
-let signer;
-let contract = null;
-
-export async function initializeContract() {
-  console.log('Initializing contract');
-  try {
-    if (!(await connectWallet())) {
-      console.error('Wallet connection failed');
-      return false;
+    const connectButton = document.getElementById('connectButton');
+    if (!connectButton) {
+      console.error('Connect button not found');
+    } else {
+      connectButton.addEventListener('click', async () => {
+        console.log('Connect Wallet button clicked');
+        alert('Button clicked!'); // Временная проверка клика
+        if (connectButton.textContent.includes('Disconnect')) {
+          handleDisconnect();
+        } else {
+          await initializeContract();
+          await updateMemeList();
+        }
+      });
     }
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
-    contract = new ethers.Contract(contractAddress, contractABI, signer);
-    const code = await provider.getCode(contractAddress);
-    if (code === '0x') {
-      console.error('Contract not found at address:', contractAddress);
-      window.Swal.fire('Ошибка', 'Контракт не существует по адресу ' + contractAddress, 'error');
-      return false;
-    }
-    const memeCount = await contract.memeCount();
-    console.log('memeCount from contract:', memeCount.toNumber());
-    listenToContractEvents();
-    return true;
-  } catch (error) {
-    console.error('Contract initialization error:', error);
-    window.Swal.fire('Ошибка', 'Ошибка инициализации контракта: ' + error.message, 'error');
-    contract = null;
-    return false;
-  }
-}
 
-export function getContract() {
-  return contract;
-}
-
-export async function loadMemes() {
-  const currentContract = getContract();
-  if (!currentContract) {
-    console.error('No contract available');
-    window.Swal.fire('Ошибка', 'Сначала подключите кошелек!', 'error');
-    throw new Error('Сначала подключите кошелек!');
-  }
-  try {
-    const memeCount = await currentContract.memeCount();
-    console.log('memeCount:', memeCount.toNumber());
-    const memesWithVotes = [];
-    for (let i = 0; i < memeCount.toNumber(); i++) {
+    document.getElementById('memeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      console.log('Meme form submitted');
+      const discord = document.getElementById('discordUsername').value;
+      const title = document.getElementById('memeTitle').value;
+      const url = document.getElementById('memeUrl').value;
       try {
-        const name = await currentContract.getName(i);
-        const votes = (await currentContract.getVotes(i)).toNumber();
-        console.log(`Мем ID ${i}: name=${name}, votes=${votes}`);
-        memesWithVotes.push({ id: i, title: name, votes });
+        await addMeme(title);
+        document.getElementById('memeForm').reset();
+        await updateMemeList();
       } catch (error) {
-        console.error(`Ошибка загрузки мем ID ${i}:`, error);
+        console.error('Ошибка добавления мема:', error);
+      }
+    });
+
+    window.voteMeme = async (memeId) => {
+      console.log('Vote button clicked for meme ID:', memeId);
+      await voteMeme(memeId);
+      await updateMemeList();
+    };
+
+    async function updateMemeList() {
+      try {
+        const memes = await loadMemes();
+        const memeList = document.getElementById('memeList');
+        memeList.innerHTML = '';
+        memes.forEach(meme => {
+          const memeElement = document.createElement('div');
+          memeElement.className = 'p-4 bg-white rounded-lg shadow-md';
+          memeElement.innerHTML = `
+            <h3 class="text-lg font-semibold">${meme.title}</h3>
+            <p class="text-gray-600">Голосов: ${meme.votes}</p>
+            <button onclick="voteMeme(${meme.id})" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Голосовать</button>
+          `;
+          memeList.appendChild(memeElement);
+        });
+      } catch (error) {
+        console.error('Ошибка обновления списка мемов:', error);
       }
     }
-    return memesWithVotes;
-  } catch (error) {
-    console.error('Error in loadMemes:', error);
-    window.Swal.fire('Ошибка', 'Ошибка загрузки мемов: ' + error.message, 'error');
-    throw error;
-  }
-}
 
-export async function voteMeme(memeId) {
-  const currentContract = getContract();
-  if (!currentContract) {
-    console.error('No contract available for voting');
-    window.Swal.fire('Ошибка', 'Сначала подключите кошелек!', 'error');
-    throw new Error('Сначала подключите кошелек!');
-  }
-  try {
-    const userAddress = await signer.getAddress();
-    const memeCount = await currentContract.memeCount();
-    if (memeId >= memeCount.toNumber()) {
-      console.error('Meme ID does not exist:', memeId);
-      window.Swal.fire('Ошибка', 'Мем с таким ID не существует.', 'error');
-      return false;
-    }
-    const voted = await currentContract.hasVoted(userAddress, memeId);
-    if (voted) {
-      console.log('User already voted for meme ID:', memeId);
-      window.Swal.fire('Ошибка', 'Вы уже голосовали за этот мем.', 'error');
-      return false;
-    }
-    const estimatedGas = await currentContract.estimateGas.vote(memeId);
-    console.log('Estimated gas for vote:', estimatedGas.toString());
-    const tx = await currentContract.vote(memeId, { gasLimit: estimatedGas.mul(120).div(100) });
-    console.log('Transaction sent:', tx.hash);
-    await tx.wait();
-    console.log('Vote successful');
-    window.Swal.fire('Успех', 'Голос успешно отдан!', 'success');
-    return true;
-  } catch (error) {
-    console.error('Voting error:', error);
-    window.Swal.fire('Ошибка', 'Ошибка при голосовании: ' + error.message, 'error');
-    return false;
-  }
-}
-
-export async function addMeme(name) {
-  const currentContract = getContract();
-  if (!currentContract) {
-    console.error('No contract available for adding meme');
-    window.Swal.fire('Ошибка', 'Сначала подключите кошелек!', 'error');
-    throw new Error('Сначала подключите кошелек!');
-  }
-  try {
-    const owner = await currentContract.owner();
-    const userAddress = await signer.getAddress();
-    if (owner.toLowerCase() !== userAddress.toLowerCase()) {
-      console.error('Not contract owner:', userAddress);
-      window.Swal.fire('Ошибка', 'Только владелец контракта может добавлять мемы.', 'error');
-      return false;
-    }
-    const estimatedGas = await currentContract.estimateGas.addMeme(name);
-    console.log('Estimated gas for addMeme:', estimatedGas.toString());
-    const tx = await currentContract.addMeme(name, { gasLimit: estimatedGas.mul(120).div(100) });
-    console.log('Transaction sent:', tx.hash);
-    await tx.wait();
-    console.log('Meme added successfully');
-    window.Swal.fire('Успех', 'Мем успешно добавлен!', 'success');
-    return true;
-  } catch (error) {
-    console.error('Error adding meme:', error);
-    window.Swal.fire('Ошибка', 'Ошибка при добавлении мема: ' + error.message, 'error');
-    return false;
-  }
-}
-
-function listenToContractEvents() {
-  if (!contract) return;
-  contract.on('MemeAdded', (memeId, name) => {
-    console.log(`New meme added: ID=${memeId}, Name=${name}`);
-    loadMemes().then(updateMemeListUI);
-  });
-  contract.on('Voted', (memeId, voter) => {
-    console.log(`Vote for meme ID=${memeId} by ${voter}`);
-    loadMemes().then(updateMemeListUI);
-  });
-}
-
-async function updateMemeListUI(memes) {
-  const memeList = document.getElementById('memeList');
-  if (!memeList) return;
-  memeList.innerHTML = '';
-  memes.forEach(meme => {
-    const memeElement = document.createElement('div');
-    memeElement.innerHTML = `
-      <div class="p-4 bg-white rounded-lg shadow-md">
-        <h3 class="text-lg
+    window.addEventListener('load', async () => {
+      console.log('Page loaded, updating meme list');
+      await updateMemeList();
+    });
+  </script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <header class="bg-orange-500 text-white p-4">
+    <h1 class="text-2xl font-bold">HEMIMEME</h1>
+  </header>
+  <main class="max-w-4xl mx-auto p-4">
+    <div class="flex justify-between mb-4">
+      <button id="submitMemeButton" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Submit Meme</button>
+      <button id="connectButton" class="bg-white/90 text-orange-600 px-4 py-2 rounded hover:bg-white">Connect Wallet</button>
+    </div>
+    <section>
+      <h2 class="text-xl font-semibold mb-4">Trending Memes</h2>
+      <div id="memeList" class="grid grid-cols-1 gap-4"></div>
+    </section>
+    <section id="memeFormSection" class="hidden mt-8">
+      <h2 class="text-xl font-semibold mb-4">Submit New Meme</h2>
+      <form id="memeForm" class="bg-white p-6 rounded-lg shadow-md">
+        <div class="mb-4">
+          <label for="discordUsername" class="block text-gray-700">Discord Username</label>
+          <input type="text" id="discordUsername" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="mb-4">
+          <label for="memeTitle" class="block text-gray-700">Meme Title</label>
+          <input type="text" id="memeTitle" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="mb-4">
+          <label for="memeUrl" class="block text-gray-700">Image URL</label>
+          <input type="url" id="memeUrl" class="w-full p-2 border rounded" required>
+        </div>
+        <div class="flex justify-end gap-4">
+          <button type="button" id="cancelMemeButton" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancel</button>
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Submit</button>
+        </div>
+      </form>
+    </section>
+  </main>
+  <script>
+    document.getElementById('submitMemeButton').addEventListener('click', () => {
+      document.getElementById('memeFormSection').classList.toggle('hidden');
+    });
+    document.getElementById('cancelMemeButton').addEventListener('click', () => {
+      document.getElementById('memeFormSection').classList.add('hidden');
+      document.getElementById('memeForm').reset();
+    });
+  </script>
+</body>
+</html>
