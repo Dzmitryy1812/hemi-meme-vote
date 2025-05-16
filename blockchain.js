@@ -1,15 +1,15 @@
 import { contractAddress, contractABI } from './contractConfig.js';
-import { connectWallet, HEMI_NETWORK } from './connectButton.js';
+import { connectWallet } from './connectButton.js';
 
 let provider;
 let signer;
-let contract = null;
+let contract;
 
 export async function initializeContract() {
   console.log('Initializing contract');
   if (typeof window.ethers === 'undefined') {
     console.error('ethers is not loaded');
-    window.Swal.fire('Ошибка', 'Библиотека ethers не загружена. Проверьте подключение к интернету или загрузите локальную копию.', 'error');
+    window.Swal.fire('Ошибка', 'Библиотека ethers не загружена.', 'error');
     return false;
   }
   try {
@@ -26,142 +26,66 @@ export async function initializeContract() {
       window.Swal.fire('Ошибка', 'Контракт не существует по адресу ' + contractAddress, 'error');
       return false;
     }
-    const memeCount = await contract.memeCount();
-    console.log('memeCount from contract:', memeCount.toNumber());
-    listenToContractEvents();
     return true;
   } catch (error) {
     console.error('Contract initialization error:', error);
     window.Swal.fire('Ошибка', 'Ошибка инициализации контракта: ' + error.message, 'error');
-    contract = null;
     return false;
   }
 }
 
-export function getContract() {
-  return contract;
-}
-
 export async function loadMemes() {
-  const currentContract = getContract();
-  if (!currentContract) {
+  if (!contract) {
     console.error('No contract available');
     window.Swal.fire('Ошибка', 'Сначала подключите кошелек!', 'error');
     throw new Error('Сначала подключите кошелек!');
   }
   try {
-    const memeCount = await currentContract.memeCount();
-    console.log('memeCount:', memeCount.toNumber());
-    const memesWithVotes = [];
-    for (let i = 0; i < memeCount.toNumber(); i++) {
-      try {
-        const name = await currentContract.getName(i);
-        const votes = (await currentContract.getVotes(i)).toNumber();
-        console.log(`Мем ID ${i}: name=${name}, votes=${votes}`);
-        memesWithVotes.push({ id: i, title: name, votes });
-      } catch (error) {
-        console.error(`Ошибка загрузки мем ID ${i}:`, error);
-      }
+    const memeCount = await contract.memeCount();
+    const memes = [];
+    for (let i = 0; i < memeCount; i++) {
+      const name = await contract.getName(i);
+      const votes = await contract.getVotes(i);
+      memes.push({ id: i, title: name, votes: votes.toNumber() });
     }
-    return memesWithVotes;
+    return memes;
   } catch (error) {
-    console.error('Error in loadMemes:', error);
+    console.error('Error loading memes:', error);
     window.Swal.fire('Ошибка', 'Ошибка загрузки мемов: ' + error.message, 'error');
     throw error;
   }
 }
 
 export async function voteMeme(memeId) {
-  const currentContract = getContract();
-  if (!currentContract) {
-    console.error('No contract available for voting');
+  if (!contract) {
+    console.error('No contract available');
     window.Swal.fire('Ошибка', 'Сначала подключите кошелек!', 'error');
     throw new Error('Сначала подключите кошелек!');
   }
   try {
-    const userAddress = await signer.getAddress();
-    const memeCount = await currentContract.memeCount();
-    if (memeId >= memeCount.toNumber()) {
-      console.error('Meme ID does not exist:', memeId);
-      window.Swal.fire('Ошибка', 'Мем с таким ID не существует.', 'error');
-      return false;
-    }
-    const voted = await currentContract.hasVoted(userAddress, memeId);
-    if (voted) {
-      console.log('User already voted for meme ID:', memeId);
-      window.Swal.fire('Ошибка', 'Вы уже голосовали за этот мем.', 'error');
-      return false;
-    }
-    const estimatedGas = await currentContract.estimateGas.vote(memeId);
-    console.log('Estimated gas for vote:', estimatedGas.toString());
-    const tx = await currentContract.vote(memeId, { gasLimit: estimatedGas.mul(120).div(100) });
-    console.log('Transaction sent:', tx.hash);
+    const tx = await contract.vote(memeId);
     await tx.wait();
-    console.log('Vote successful');
     window.Swal.fire('Успех', 'Голос успешно отдан!', 'success');
-    return true;
   } catch (error) {
     console.error('Voting error:', error);
     window.Swal.fire('Ошибка', 'Ошибка при голосовании: ' + error.message, 'error');
-    return false;
+    throw error;
   }
 }
 
 export async function addMeme(name) {
-  const currentContract = getContract();
-  if (!currentContract) {
-    console.error('No contract available for adding meme');
+  if (!contract) {
+    console.error('No contract available');
     window.Swal.fire('Ошибка', 'Сначала подключите кошелек!', 'error');
     throw new Error('Сначала подключите кошелек!');
   }
   try {
-    const owner = await currentContract.owner();
-    const userAddress = await signer.getAddress();
-    if (owner.toLowerCase() !== userAddress.toLowerCase()) {
-      console.error('Not contract owner:', userAddress);
-      window.Swal.fire('Ошибка', 'Только владелец контракта может добавлять мемы.', 'error');
-      return false;
-    }
-    const estimatedGas = await currentContract.estimateGas.addMeme(name);
-    console.log('Estimated gas for addMeme:', estimatedGas.toString());
-    const tx = await currentContract.addMeme(name, { gasLimit: estimatedGas.mul(120).div(100) });
-    console.log('Transaction sent:', tx.hash);
+    const tx = await contract.addMeme(name);
     await tx.wait();
-    console.log('Meme added successfully');
     window.Swal.fire('Успех', 'Мем успешно добавлен!', 'success');
-    return true;
   } catch (error) {
     console.error('Error adding meme:', error);
     window.Swal.fire('Ошибка', 'Ошибка при добавлении мема: ' + error.message, 'error');
-    return false;
+    throw error;
   }
-}
-
-function listenToContractEvents() {
-  if (!contract) return;
-  contract.on('MemeAdded', (memeId, name) => {
-    console.log(`New meme added: ID=${memeId}, Name=${name}`);
-    loadMemes().then(updateMemeListUI);
-  });
-  contract.on('Voted', (memeId, voter) => {
-    console.log(`Vote for meme ID=${memeId} by ${voter}`);
-    loadMemes().then(updateMemeListUI);
-  });
-}
-
-async function updateMemeListUI(memes) {
-  const memeList = document.getElementById('memeList');
-  if (!memeList) return;
-  memeList.innerHTML = '';
-  memes.forEach(meme => {
-    const memeElement = document.createElement('div');
-    memeElement.innerHTML = `
-      <div class="p-4 bg-white rounded-lg shadow-md">
-        <h3 class="text-lg font-semibold">${meme.title}</h3>
-        <p class="text-gray-600">Голосов: ${meme.votes}</p>
-        <button onclick="voteMeme(${meme.id})" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Голосовать</button>
-      </div>
-    `;
-    memeList.appendChild(memeElement);
-  });
 }
