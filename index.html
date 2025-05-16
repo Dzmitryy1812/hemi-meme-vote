@@ -5,15 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HEMIMEME</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Замените на локальную копию, если CDN не работает -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
   <script>
-    // Подавляем предупреждение Tailwind CSS
-    tailwind.config = {};
-    // Проверяем доступность библиотек
+    tailwind.config = {}; // Подавляем предупреждение Tailwind
     console.log('ethers available:', typeof window.ethers);
+    console.log('ethers.providers available:', typeof window.ethers?.providers);
     console.log('Swal available:', typeof window.Swal);
     console.log('window.ethereum available:', typeof window.ethereum);
+    if (typeof window.ethers === 'undefined') {
+      console.error('ethers failed to load. Check CDN or use local copy.');
+    }
   </script>
   <script type="module">
     import { connectWallet, handleDisconnect } from './connectButton.js';
@@ -21,16 +24,21 @@
 
     console.log('Script module loaded');
 
-    document.getElementById('connectButton').addEventListener('click', async () => {
-      console.log('Connect Wallet button clicked');
-      alert('Button clicked!'); // Временная проверка клика
-      if (document.getElementById('connectButton').textContent.includes('Disconnect')) {
-        handleDisconnect();
-      } else {
-        await initializeContract();
-        await updateMemeList();
-      }
-    });
+    const connectButton = document.getElementById('connectButton');
+    if (!connectButton) {
+      console.error('Connect button not found');
+    } else {
+      connectButton.addEventListener('click', async () => {
+        console.log('Connect Wallet button clicked');
+        alert('Button clicked!'); // Временная проверка клика
+        if (connectButton.textContent.includes('Disconnect')) {
+          handleDisconnect();
+        } else {
+          await initializeContract();
+          await updateMemeList();
+        }
+      });
+    }
 
     document.getElementById('memeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -64,64 +72,4 @@
           memeElement.innerHTML = `
             <h3 class="text-lg font-semibold">${meme.title}</h3>
             <p class="text-gray-600">Голосов: ${meme.votes}</p>
-            <button onclick="voteMeme(${meme.id})" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Голосовать</button>
-          `;
-          memeList.appendChild(memeElement);
-        });
-      } catch (error) {
-        console.error('Ошибка обновления списка мемов:', error);
-      }
-    }
-
-    window.addEventListener('load', async () => {
-      console.log('Page loaded, updating meme list');
-      await updateMemeList();
-    });
-  </script>
-</head>
-<body class="bg-gray-100 font-sans">
-  <header class="bg-orange-500 text-white p-4">
-    <h1 class="text-2xl font-bold">HEMIMEME</h1>
-  </header>
-  <main class="max-w-4xl mx-auto p-4">
-    <div class="flex justify-between mb-4">
-      <button id="submitMemeButton" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Submit Meme</button>
-      <button id="connectButton" class="bg-white/90 text-orange-600 px-4 py-2 rounded hover:bg-white">Connect Wallet</button>
-    </div>
-    <section>
-      <h2 class="text-xl font-semibold mb-4">Trending Memes</h2>
-      <div id="memeList" class="grid grid-cols-1 gap-4"></div>
-    </section>
-    <section id="memeFormSection" class="hidden mt-8">
-      <h2 class="text-xl font-semibold mb-4">Submit New Meme</h2>
-      <form id="memeForm" class="bg-white p-6 rounded-lg shadow-md">
-        <div class="mb-4">
-          <label for="discordUsername" class="block text-gray-700">Discord Username</label>
-          <input type="text" id="discordUsername" class="w-full p-2 border rounded" required>
-        </div>
-        <div class="mb-4">
-          <label for="memeTitle" class="block text-gray-700">Meme Title</label>
-          <input type="text" id="memeTitle" class="w-full p-2 border rounded" required>
-        </div>
-        <div class="mb-4">
-          <label for="memeUrl" class="block text-gray-700">Image URL</label>
-          <input type="url" id="memeUrl" class="w-full p-2 border rounded" required>
-        </div>
-        <div class="flex justify-end gap-4">
-          <button type="button" id="cancelMemeButton" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancel</button>
-          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Submit</button>
-        </div>
-      </form>
-    </section>
-  </main>
-  <script>
-    document.getElementById('submitMemeButton').addEventListener('click', () => {
-      document.getElementById('memeFormSection').classList.toggle('hidden');
-    });
-    document.getElementById('cancelMemeButton').addEventListener('click', () => {
-      document.getElementById('memeFormSection').classList.add('hidden');
-      document.getElementById('memeForm').reset();
-    });
-  </script>
-</body>
-</html>
+            <button onclick="voteMeme(${meme.id})" class="mt-2 bg-blue-500 text-white px
