@@ -1,5 +1,6 @@
-import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
-import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.mjs';
+
+const { ethers } = window;
 
 export const HEMI_NETWORK = {
   chainId: '0xA867', // hex for 43111
@@ -26,16 +27,20 @@ const loadConnectionState = () => {
 };
 
 export async function connectWallet() {
+  console.log('Starting connectWallet, window.ethereum:', typeof window.ethereum);
   if (typeof window.ethereum === 'undefined') {
-    Swal.fire('Ошибка', 'Пожалуйста, установите MetaMask!', 'error');
+    console.error('MetaMask is not detected');
+    Swal.fire('Ошибка', 'Пожалуйста, установите и активируйте MetaMask!', 'error');
     return false;
   }
 
   try {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     let chainId = await provider.send('eth_chainId', []);
+    console.log('Current chainId:', chainId);
 
     if (chainId !== HEMI_NETWORK.chainId) {
+      console.log('Switching to Hemi Network');
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
@@ -43,6 +48,7 @@ export async function connectWallet() {
         });
       } catch (switchError) {
         if (switchError.code === 4902) {
+          console.log('Adding Hemi Network');
           try {
             await window.ethereum.request({
               method: 'wallet_addEthereumChain',
@@ -54,25 +60,30 @@ export async function connectWallet() {
               params: [{ chainId: HEMI_NETWORK.chainId }]
             });
           } catch (addError) {
+            console.error('Failed to add Hemi network:', addError);
             Swal.fire('Ошибка', 'Не удалось добавить сеть Hemi: ' + addError.message, 'error');
             return false;
           }
         } else {
+          console.error('Failed to switch network:', switchError);
           Swal.fire('Ошибка', 'Не удалось переключить сеть: ' + switchError.message, 'error');
           return false;
         }
       }
     }
 
+    console.log('Requesting accounts');
     await provider.send('eth_requestAccounts', []);
     const signer = provider.getSigner();
     currentAccount = await signer.getAddress();
     isConnected = true;
+    console.log('Connected account:', currentAccount);
 
     updateConnectionState({ isConnected });
     updateButtonState();
 
     window.ethereum.on('accountsChanged', (accounts) => {
+      console.log('Accounts changed:', accounts);
       if (accounts.length === 0) {
         handleDisconnect();
       } else {
@@ -83,12 +94,14 @@ export async function connectWallet() {
 
     return true;
   } catch (error) {
+    console.error('Connection error:', error);
     Swal.fire('Ошибка', 'Ошибка подключения: ' + error.message, 'error');
     return false;
   }
 }
 
 export function handleDisconnect() {
+  console.log('Disconnecting wallet');
   isConnected = false;
   currentAccount = null;
   updateConnectionState({ isConnected: false });
@@ -96,6 +109,7 @@ export function handleDisconnect() {
 }
 
 window.addEventListener('load', async () => {
+  console.log('Checking connection state on load');
   const state = loadConnectionState();
   if (state.isConnected && typeof window.ethereum !== 'undefined') {
     try {
@@ -106,6 +120,7 @@ window.addEventListener('load', async () => {
         updateButtonState();
       }
     } catch (error) {
+      console.error('Error checking accounts on load:', error);
       handleDisconnect();
     }
   }
@@ -113,7 +128,10 @@ window.addEventListener('load', async () => {
 
 export function updateButtonState() {
   const button = document.getElementById('connectButton');
-  if (!button) return;
+  if (!button) {
+    console.error('Connect button not found');
+    return;
+  }
 
   if (isConnected && currentAccount) {
     button.textContent = `Disconnect (${currentAccount.slice(0,6)}...${currentAccount.slice(-4)})`;
