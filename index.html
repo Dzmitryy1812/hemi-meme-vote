@@ -104,7 +104,8 @@
   const cancelBtn = document.getElementById('cancelBtn');
 
   let walletConnected = false;
-  let localMemes = []; // Будем хранить мемы локально после добавления
+  // Храним дополнительные данные мемов (URL, автор) локально
+  let memeMetadata = JSON.parse(localStorage.getItem('memeMetadata')) || [];
 
   async function renderMemes() {
     votingGrid.innerHTML = '';
@@ -113,14 +114,17 @@
       const contractMemes = await loadMemes(); // [{id, title, votes}]
       console.log('Мемы из контракта:', contractMemes);
 
-      // Обновляем локальный массив мемов
-      localMemes = contractMemes.map((meme, index) => ({
-        id: meme.id,
-        title: meme.title,
-        url: `https://dzmitryy1812.github.io/public/memes/${meme.id + 1}.jpg`, // Предполагаем, что URL генерируется по ID
-        author: `user${meme.id + 1}#${1000 + meme.id}`, // Генерируем временного автора
-        votes: meme.votes
-      }));
+      // Обновляем локальный массив мемов с учетом метаданных
+      const localMemes = contractMemes.map(meme => {
+        const metadata = memeMetadata.find(m => m.id === meme.id) || {};
+        return {
+          id: meme.id,
+          title: meme.title,
+          url: metadata.url || 'https://via.placeholder.com/300x200?text=Meme+Image',
+          author: metadata.author || `user${meme.id + 1}#${1000 + meme.id}`,
+          votes: meme.votes
+        };
+      });
       console.log('Обновленный локальный массив мемов:', localMemes);
 
       if (localMemes.length === 0) {
@@ -211,15 +215,19 @@
       console.log('Добавление мема:', memeTitle);
       const added = await addMeme(memeTitle);
       if (added) {
-        // Добавляем мем в локальный массив
-        const newId = localMemes.length;
-        localMemes.push({
+        // Получаем новый ID мема из контракта
+        const memeCount = (await contract.memeCount()).toNumber();
+        const newId = memeCount - 1; // Новый мем получает ID = memeCount - 1
+        console.log('Новый мем добавлен с ID:', newId);
+
+        // Сохраняем метаданные локально
+        memeMetadata.push({
           id: newId,
-          title: memeTitle,
           url: memeUrl,
-          author: discordName,
-          votes: 0
+          author: discordName
         });
+        localStorage.setItem('memeMetadata', JSON.stringify(memeMetadata));
+
         alert('Meme successfully added!');
         uploadModal.style.display = 'none';
         memeForm.reset();
