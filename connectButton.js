@@ -1,6 +1,7 @@
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
+import Swal from 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
 
-const HEMI_NETWORK = {
+export const HEMI_NETWORK = {
   chainId: '0xA867', // hex for 43111
   chainName: 'Hemi',
   nativeCurrency: {
@@ -26,8 +27,8 @@ const loadConnectionState = () => {
 
 export async function connectWallet() {
   if (typeof window.ethereum === 'undefined') {
-    // MetaMask not installed - no alert, just return
-    return;
+    Swal.fire('Ошибка', 'Пожалуйста, установите MetaMask!', 'error');
+    return false;
   }
 
   try {
@@ -53,12 +54,12 @@ export async function connectWallet() {
               params: [{ chainId: HEMI_NETWORK.chainId }]
             });
           } catch (addError) {
-            console.error('Failed to add Hemi network:', addError);
-            return;
+            Swal.fire('Ошибка', 'Не удалось добавить сеть Hemi: ' + addError.message, 'error');
+            return false;
           }
         } else {
-          console.error('Failed to switch network:', switchError);
-          return;
+          Swal.fire('Ошибка', 'Не удалось переключить сеть: ' + switchError.message, 'error');
+          return false;
         }
       }
     }
@@ -79,8 +80,11 @@ export async function connectWallet() {
         updateButtonState();
       }
     });
+
+    return true;
   } catch (error) {
-    console.error('Connection error:', error);
+    Swal.fire('Ошибка', 'Ошибка подключения: ' + error.message, 'error');
+    return false;
   }
 }
 
