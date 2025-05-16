@@ -103,13 +103,32 @@
   const memeForm = document.getElementById('memeForm');
   const cancelBtn = document.getElementById('cancelBtn');
 
+  // Local memes array (id starts from 0)
+  const memes = [
+    { id: 0, title: 'Classic Doge', url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234' },
+    { id: 1, title: 'Surprised Pikachu', url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678' },
+    { id: 2, title: 'Success Kid', url: 'https://dzmitryy1812.github.io/public/memes/3.jpg', author: 'kidlover#9012' },
+    { id: 3, title: 'Distracted Boyfriend', url: 'https://dzmitryy1812.github.io/public/memes/4.jpg', author: 'relshipmeme#3456' },
+    { id: 4, title: 'Evil Kermit', url: 'https://dzmitryy1812.github.io/public/memes/5.jpg', author: 'muppets#7890' },
+    { id: 5, title: 'Drake Reaction', url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234' }
+  ];
+
   let walletConnected = false;
 
   async function renderMemes() {
     votingGrid.innerHTML = '';
     try {
-      const memes = await loadMemes();
-      memes.forEach(meme => {
+      // Get votes from contract and merge with local memes
+      const votesFromContract = await loadMemes(); // [{id, votes}]
+      const memesWithVotes = memes.map(localMeme => {
+        const contractMeme = votesFromContract.find(m => m.id === localMeme.id);
+        return {
+          ...localMeme,
+          votes: contractMeme ? contractMeme.votes : 0
+        };
+      });
+
+      memesWithVotes.forEach(meme => {
         const memeCard = document.createElement('div');
         memeCard.className = 'meme-card p-4 shadow rounded-lg';
         memeCard.innerHTML = `
@@ -177,6 +196,7 @@
       return;
     }
 
+    // Optionally, you can also add the meme to the contract
     const added = await addMeme(memeTitle);
     if (added) {
       alert('Meme successfully added!');
