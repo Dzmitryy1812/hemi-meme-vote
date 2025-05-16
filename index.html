@@ -24,8 +24,9 @@
       if (document.getElementById('connectButton').textContent.includes('Disconnect')) {
         handleDisconnect();
       } else {
-        await initializeContract();
-        await updateMemeList();
+        if (await initializeContract()) {
+          await updateMemeList();
+        }
       }
     });
 
@@ -41,13 +42,19 @@
         await updateMemeList();
       } catch (error) {
         console.error('Ошибка добавления мема:', error);
+        window.Swal.fire('Ошибка', 'Ошибка добавления мема: ' + error.message, 'error');
       }
     });
 
     window.voteMeme = async (memeId) => {
       console.log('Vote button clicked for meme ID:', memeId);
-      await voteMeme(memeId);
-      await updateMemeList();
+      try {
+        await voteMeme(memeId);
+        await updateMemeList();
+      } catch (error) {
+        console.error('Ошибка голосования:', error);
+        window.Swal.fire('Ошибка', 'Ошибка голосования: ' + error.message, 'error');
+      }
     };
 
     async function updateMemeList() {
@@ -67,13 +74,9 @@
         });
       } catch (error) {
         console.error('Ошибка обновления списка мемов:', error);
+        window.Swal.fire('Ошибка', 'Ошибка загрузки мемов: ' + error.message, 'error');
       }
     }
-
-    window.addEventListener('load', async () => {
-      console.log('Page loaded, updating meme list');
-      await updateMemeList();
-    });
   </script>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -87,7 +90,7 @@
     </div>
     <section>
       <h2 class="text-xl font-semibold mb-4">Trending Memes</h2>
-    <div id="memeList" class="grid grid-cols-1 gap-4"></div>
+      <div id="memeList" class="grid grid-cols-1 gap-4"></div>
     </section>
     <section id="memeFormSection" class="hidden mt-8">
       <h2 class="text-xl font-semibold mb-4">Submit New Meme</h2>
