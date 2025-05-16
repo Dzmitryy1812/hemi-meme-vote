@@ -5,13 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HEMIMEME</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.mjs"></script>
   <script type="module">
     import { connectWallet, handleDisconnect } from './connectButton.js';
     import { initializeContract, loadMemes, voteMeme, addMeme } from './blockchain.js';
 
+    console.log('Script loaded, window.ethereum:', typeof window.ethereum);
+
     document.getElementById('connectButton').addEventListener('click', async () => {
+      console.log('Connect Wallet button clicked');
       if (document.getElementById('connectButton').textContent.includes('Disconnect')) {
         handleDisconnect();
       } else {
@@ -22,11 +25,12 @@
 
     document.getElementById('memeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      console.log('Meme form submitted');
       const discord = document.getElementById('discordUsername').value;
       const title = document.getElementById('memeTitle').value;
       const url = document.getElementById('memeUrl').value;
       try {
-        await addMeme(title); // В контракте хранится только название, URL и Discord можно хранить локально
+        await addMeme(title);
         document.getElementById('memeForm').reset();
         await updateMemeList();
       } catch (error) {
@@ -35,6 +39,7 @@
     });
 
     window.voteMeme = async (memeId) => {
+      console.log('Vote button clicked for meme ID:', memeId);
       await voteMeme(memeId);
       await updateMemeList();
     };
@@ -60,6 +65,7 @@
     }
 
     window.addEventListener('load', async () => {
+      console.log('Page loaded, updating meme list');
       await updateMemeList();
     });
   </script>
