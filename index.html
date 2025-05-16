@@ -14,18 +14,21 @@
     console.log('window.ethereum available:', typeof window.ethereum);
   </script>
   <script type="module">
-    import { connectWallet, handleDisconnect } from './connectButton.js';
-    import { initializeContract, loadMemes, voteMeme, addMeme } from './blockchain.js';
+    import { connectWallet, handleDisconnect, initializeContract, loadMemes, voteMeme, addMeme } from './blockchain.js';
 
     console.log('Script module loaded');
 
     document.getElementById('connectButton').addEventListener('click', async () => {
       console.log('Connect Wallet button clicked');
-      if (document.getElementById('connectButton').textContent.includes('Disconnect')) {
+      const connectButton = document.getElementById('connectButton');
+      if (connectButton.textContent.includes('Disconnect')) {
         handleDisconnect();
       } else {
-        if (await initializeContract()) {
-          await updateMemeList();
+        if (await connectWallet()) {
+          if (await initializeContract()) {
+            await updateMemeList();
+            connectButton.textContent = 'Disconnect Wallet';
+          }
         }
       }
     });
