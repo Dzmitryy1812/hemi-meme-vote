@@ -1,4 +1,3 @@
-// blockchain.js
 import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js';
 
 // Адрес и ABI контракта
@@ -91,16 +90,6 @@ const contractABI = [
   }
 ];
 
-// Локальный массив мемов (НЕ из контракта)
-const staticMemes = [
-  { id: 0, title: 'Classic Doge', url: 'https://dzmitryy1812.github.io/public/memes/1.jpg', author: 'memelord#1234' },
-  { id: 1, title: 'Surprised Pikachu', url: 'https://dzmitryy1812.github.io/public/memes/2.jpg', author: 'pokefan#5678' },
-  { id: 2, title: 'Success Kid', url: 'https://dzmitryy1812.github.io/public/memes/3.jpg', author: 'kidlover#9012' },
-  { id: 3, title: 'Distracted Boyfriend', url: 'https://dzmitryy1812.github.io/public/memes/4.jpg', author: 'relshipmeme#3456' },
-  { id: 4, title: 'Evil Kermit', url: 'https://dzmitryy1812.github.io/public/memes/5.jpg', author: 'muppets#7890' },
-  { id: 5, title: 'Drake Reaction', url: 'https://dzmitryy1812.github.io/public/memes/6.jpg', author: 'drakepost#1234' }
-];
-
 let provider;
 let signer;
 let contract;
@@ -121,15 +110,16 @@ export async function connectWallet() {
 // Загрузка мемов с голосами из контракта
 export async function loadMemes() {
   if (!contract) throw new Error('Сначала подключите кошелек!');
+  const memeCount = await contract.memeCount();
   const memesWithVotes = [];
-  for (const meme of staticMemes) {
-    let votes = 0;
+  for (let i = 0; i < memeCount.toNumber(); i++) {
     try {
-      votes = (await contract.getVotes(meme.id)).toNumber();
+      const name = await contract.getName(i);
+      const votes = (await contract.getVotes(i)).toNumber();
+      memesWithVotes.push({ id: i, title: name, votes });
     } catch (error) {
-      votes = 0;
+      console.error(`Ошибка загрузки мем ID ${i}:`, error);
     }
-    memesWithVotes.push({ ...meme, votes });
   }
   return memesWithVotes;
 }
@@ -139,30 +129,40 @@ export async function voteMeme(memeId) {
   if (!contract) throw new Error('Сначала подключите кошелек!');
   try {
     const userAddress = await signer.getAddress();
-    const voted = await contract.hasVoted(userAddress, memeId);
+    const memeCount = await contract.memeCount();
+    if (memeId >= memeCount.toNumber()) {
+      alert('Мем с таким ID не существует.');
+      return false;
+    }
+    const voted = await contract.hasVoted(userAddress, memeId).catch(e => {
+      console.error('Ошибка hasVoted:', e);
+      return true; // Предполагаем, что голос уже учтен, если ошибка
+    });
     if (voted) {
       alert('Вы уже голосовали за этот мем.');
       return false;
     }
-    const tx = await contract.vote(memeId);
+    const tx = await contract.vote(memeId, { gasLimit: 100000 });
     await tx.wait();
     alert('Голос успешно отдан!');
     return true;
   } catch (error) {
+    console.error('Ошибка при голосовании:', error);
     alert('Ошибка при голосовании: ' + error.message);
     return false;
   }
 }
 
-// Добавление нового мема (если нужно)
+// Добавление нового мема
 export async function addMeme(name) {
   if (!contract) throw new Error('Сначала подключите кошелек!');
   try {
-    const tx = await contract.addMeme(name);
+    const tx = await contract.addMeme(name, { gasLimit: 100000 });
     await tx.wait();
     alert('Мем успешно добавлен!');
     return true;
   } catch (error) {
+    console.error('Ошибка при добавлении мемa:', error);
     alert('Ошибка при добавлении мемa: ' + error.message);
     return false;
   }
