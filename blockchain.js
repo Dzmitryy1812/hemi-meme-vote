@@ -26,6 +26,7 @@ export async function initializeContract() {
       window.Swal.fire('Ошибка', 'Контракт не существует по адресу ' + contractAddress, 'error');
       return false;
     }
+    console.log('Contract initialized successfully');
     return true;
   } catch (error) {
     console.error('Contract initialization error:', error);
@@ -46,19 +47,24 @@ export async function loadMemes() {
     const memes = [];
     for (let i = 0; i < memeCount; i++) {
       try {
+        // Проверяем существование мема через getName
         const name = await contract.getName(i);
+        if (!name || name === '') {
+          console.warn(`Мем ID ${i} имеет пустое имя, пропускаем`);
+          continue;
+        }
         const votes = await contract.getVotes(i);
         console.log(`Мем ID ${i}: name=${name}, votes=${votes.toNumber()}`);
         memes.push({ id: i, title: name, votes: votes.toNumber() });
       } catch (error) {
         console.error(`Ошибка загрузки мема ID ${i}:`, error);
-        // Пропускаем проблемный мем, чтобы продолжить загрузку остальных
+        // Пропускаем проблемный мем
         continue;
       }
     }
     if (memes.length === 0 && memeCount.toNumber() > 0) {
       console.warn('Не удалось загрузить ни одного мема');
-      window.Swal.fire('Предупреждение', 'Не удалось загрузить мемы. Проверьте контракт или сеть.', 'warning');
+      window.Swal.fire('Предупреждение', 'Не удалось загрузить мемы. Возможно, контракт пуст или повреждён.', 'warning');
     }
     return memes;
   } catch (error) {
