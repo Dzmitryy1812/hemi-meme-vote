@@ -3,96 +3,13 @@ import { ethers } from 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.es
 // Адрес и ABI контракта
 const contractAddress = '0x715045cea81d1DcC604b6A379B94D6049CDaa5a0';
 const contractABI = [
-  {
-    "inputs": [{ "internalType": "string", "name": "_name", "type": "string" }],
-    "name": "addMeme",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      { "indexed": false, "internalType": "uint256", "name": "memeId", "type": "uint256" },
-      { "indexed": false, "internalType": "string", "name": "name", "type": "string" }
-    ],
-    "name": "MemeAdded",
-    "type": "event"
-  },
-  {
-    "inputs": [{ "internalType": "uint256", "name": "_memeId", "type": "uint256" }],
-    "name": "vote",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      { "indexed": false, "internalType": "uint256", "name": "memeId", "type": "uint256" },
-      { "indexed": false, "internalType": "address", "name": "voter", "type": "address" }
-    ],
-    "name": "Voted",
-    "type": "event"
-  },
-  {
-    "inputs": [{ "internalType": "uint256", "name": "_memeId", "type": "uint256" }],
-    "name": "getName",
-    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{ "internalType": "uint256", "name": "_memeId", "type": "uint256" }],
-    "name": "getVotes",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "", "type": "address" },
-      { "internalType": "uint256", "name": "", "type": "uint256" }
-    ],
-    "name": "hasVoted",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "memeCount",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "name": "memes",
-    "outputs": [
-      { "internalType": "string", "name": "name", "type": "string" },
-      { "internalType": "uint256", "name": "votes", "type": "uint256" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "owner",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
-    "stateMutability": "view",
-    "type": "function"
-  }
+  // (Твой ABI остается прежним, см. предыдущий код)
+  // ... (вставь полный ABI здесь)
 ];
 
 let provider;
 let signer;
-export let contract = null; // Экспортируем contract для проверки
+let contract = null; // Инициализируем как null
 
 // Подключение кошелька
 export async function connectWallet() {
@@ -114,16 +31,22 @@ export async function connectWallet() {
   }
 }
 
+// Функция для проверки состояния контракта
+export function getContract() {
+  return contract;
+}
+
 // Загрузка мемов с голосами из контракта
 export async function loadMemes() {
-  if (!contract) throw new Error('Сначала подключите кошелек!');
-  const memeCount = await contract.memeCount();
+  const currentContract = getContract();
+  if (!currentContract) throw new Error('Сначала подключите кошелек!');
+  const memeCount = await currentContract.memeCount();
   console.log('memeCount:', memeCount.toNumber());
   const memesWithVotes = [];
   for (let i = 0; i < memeCount.toNumber(); i++) {
     try {
-      const name = await contract.getName(i);
-      const votes = (await contract.getVotes(i)).toNumber();
+      const name = await currentContract.getName(i);
+      const votes = (await currentContract.getVotes(i)).toNumber();
       console.log(`Мем ID ${i}: name=${name}, votes=${votes}`);
       memesWithVotes.push({ id: i, title: name, votes });
     } catch (error) {
@@ -135,55 +58,16 @@ export async function loadMemes() {
 
 // Голосование за мем
 export async function voteMeme(memeId) {
-  if (!contract) throw new Error('Сначала подключите кошелек!');
+  const currentContract = getContract();
+  if (!currentContract) throw new Error('Сначала подключите кошелек!');
   try {
     const userAddress = await signer.getAddress();
     console.log('Адрес пользователя:', userAddress);
-    const memeCount = await contract.memeCount();
+    const memeCount = await currentContract.memeCount();
     console.log('memeCount:', memeCount.toNumber());
     if (memeId >= memeCount.toNumber()) {
       console.log('Ошибка: мем с ID', memeId, 'не существует');
       alert('Мем с таким ID не существует.');
       return false;
     }
-    console.log('Проверка hasVoted для memeId:', memeId);
-    const voted = await contract.hasVoted(userAddress, memeId);
-    console.log('hasVoted результат:', voted);
-    if (voted) {
-      console.log('Пользователь уже голосовал за мем ID:', memeId);
-      alert('Вы уже голосовали за этот мем.');
-      return false;
-    }
-    const estimatedGas = await contract.estimateGas.vote(memeId);
-    console.log('Оценка газа для vote:', estimatedGas.toString());
-    const tx = await contract.vote(memeId, { gasLimit: estimatedGas.mul(120).div(100) });
-    console.log('Транзакция отправлена:', tx.hash);
-    await tx.wait();
-    console.log('Голос успешно отдан');
-    return true;
-  } catch (error) {
-    console.error('Ошибка при голосовании:', error);
-    alert('Ошибка при голосовании: ' + error.message);
-    return false;
-  }
-}
-
-// Добавление нового мема
-export async function addMeme(name) {
-  if (!contract) throw new Error('Сначала подключите кошелек!');
-  try {
-    const memeCountBefore = await contract.memeCount();
-    console.log('memeCount до добавления:', memeCountBefore.toNumber());
-    const estimatedGas = await contract.estimateGas.addMeme(name);
-    console.log('Оценка газа для addMeme:', estimatedGas.toString());
-    const tx = await contract.addMeme(name, { gasLimit: estimatedGas.mul(120).div(100) });
-    console.log('Транзакция отправлена:', tx.hash);
-    await tx.wait();
-    const memeCountAfter = await contract.memeCount();
-    console.log('memeCount после добавления:', memeCountAfter.toNumber());
-    return true;
-  } catch (error) {
-    console.error('Ошибка при добавлении мема:', error);
-    throw error; // Пробрасываем ошибку дальше
-  }
-}
+    console.log
