@@ -5,18 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HEMIMEME</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Замените на локальную копию, если CDN не работает -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
   <script>
     tailwind.config = {}; // Подавляем предупреждение Tailwind
     console.log('ethers available:', typeof window.ethers);
-    console.log('ethers.providers available:', typeof window.ethers?.providers);
     console.log('Swal available:', typeof window.Swal);
     console.log('window.ethereum available:', typeof window.ethereum);
-    if (typeof window.ethers === 'undefined') {
-      console.error('ethers failed to load. Check CDN or use local copy.');
-    }
   </script>
   <script type="module">
     import { connectWallet, handleDisconnect } from './connectButton.js';
@@ -24,21 +19,15 @@
 
     console.log('Script module loaded');
 
-    const connectButton = document.getElementById('connectButton');
-    if (!connectButton) {
-      console.error('Connect button not found');
-    } else {
-      connectButton.addEventListener('click', async () => {
-        console.log('Connect Wallet button clicked');
-        alert('Button clicked!'); // Временная проверка клика
-        if (connectButton.textContent.includes('Disconnect')) {
-          handleDisconnect();
-        } else {
-          await initializeContract();
-          await updateMemeList();
-        }
-      });
-    }
+    document.getElementById('connectButton').addEventListener('click', async () => {
+      console.log('Connect Wallet button clicked');
+      if (document.getElementById('connectButton').textContent.includes('Disconnect')) {
+        handleDisconnect();
+      } else {
+        await initializeContract();
+        await updateMemeList();
+      }
+    });
 
     document.getElementById('memeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -98,7 +87,7 @@
     </div>
     <section>
       <h2 class="text-xl font-semibold mb-4">Trending Memes</h2>
-      <div id="memeList" class="grid grid-cols-1 gap-4"></div>
+    <div id="memeList" class="grid grid-cols-1 gap-4"></div>
     </section>
     <section id="memeFormSection" class="hidden mt-8">
       <h2 class="text-xl font-semibold mb-4">Submit New Meme</h2>
